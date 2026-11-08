@@ -1,0 +1,1203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brain Brawl — Control Panel</title>
+<!--
+  BRAIN BRAWL — dual-screen scorer for a laptop + projector.
+
+  One file, no network, no dependencies. Open it, then press
+  "Open main display" to pop the audience window and drag that window to the
+  second monitor (double-click it for fullscreen).
+
+  Both windows read and write the same localStorage key, so the display
+  updates the moment the control panel saves. Colours, radii and type follow
+  lib/theme/palette.dart in the Flutter app so the two programs match.
+-->
+<style>
+  :root {
+    --bg: #0A0711;
+    --surface: rgba(21, 16, 31, .88);
+    --raised: #1B1426;
+    --border: rgba(255, 255, 255, .12);
+    --pink: #F5629B;
+    --magenta: #E23E8B;
+    --violet: #8B5CF6;
+    --cyan: #45E5E0;
+    --gold: #FFC46B;
+    --text: #F7F2FB;
+    --text2: #A79BB5;
+    --faint: #7D7189;
+    --danger: #FF7A8A;
+    --success: #54E5A0;
+    --radius: 18px;
+    --sans: 'Space Grotesk', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    color: var(--text);
+    background:
+      radial-gradient(1200px 620px at 12% -12%, rgba(245, 98, 155, .17), transparent 62%),
+      radial-gradient(1000px 560px at 88% -6%, rgba(139, 92, 246, .15), transparent 60%),
+      var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Faint arena grid behind everything. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
+    background-size: 64px 64px, 64px 64px;
+    mask-image: radial-gradient(circle at 50% 0%, #000 35%, transparent 82%);
+    -webkit-mask-image: radial-gradient(circle at 50% 0%, #000 35%, transparent 82%);
+  }
+
+  .view { display: none; }
+  body[data-view="control"] #control { display: block; }
+  body[data-view="display"] #display { display: grid; }
+  body[data-view="display"] { overflow: hidden; }
+
+  /* ---------- shared console parts (match ConsoleCard / Pill / MiniAction) ---------- */
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .card-title { font-size: 15px; font-weight: 700; margin: 0; }
+  .card-sub { font-size: 12px; color: var(--faint); margin: 4px 0 0; }
+
+  .mono {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: var(--text2);
+    background: rgba(167, 155, 181, .12);
+    border: 1px solid rgba(167, 155, 181, .35);
+    white-space: nowrap;
+  }
+  .pill.pink { color: var(--pink); background: rgba(245, 98, 155, .12); border-color: rgba(245, 98, 155, .35); }
+  .pill.cyan { color: var(--cyan); background: rgba(69, 229, 224, .12); border-color: rgba(69, 229, 224, .35); }
+  .pill.gold { color: var(--gold); background: rgba(255, 196, 107, .12); border-color: rgba(255, 196, 107, .38); }
+  .pill.danger { color: var(--danger); background: rgba(255, 122, 138, .12); border-color: rgba(255, 122, 138, .35); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, .14);
+    background: rgba(255, 255, 255, .04);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, transform .08s ease;
+  }
+  .btn:hover { background: rgba(255, 255, 255, .08); }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
+  .btn.pink { color: var(--pink); border-color: rgba(245, 98, 155, .35); background: rgba(245, 98, 155, .16); }
+  .btn.cyan { color: var(--cyan); border-color: rgba(69, 229, 224, .35); background: rgba(69, 229, 224, .14); }
+  .btn.gold { color: var(--gold); border-color: rgba(255, 196, 107, .38); background: rgba(255, 196, 107, .14); }
+  .btn.violet { color: #C9B4FF; border-color: rgba(139, 92, 246, .4); background: rgba(139, 92, 246, .16); }
+  .btn.danger { color: var(--danger); border-color: rgba(255, 122, 138, .35); background: rgba(255, 122, 138, .12); }
+  .btn[aria-pressed="true"] { box-shadow: 0 0 0 1px currentColor inset; }
+
+  .field {
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, .04);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+  }
+  .field:focus { outline: none; border-color: rgba(245, 98, 155, .7); }
+
+  .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .spread { justify-content: space-between; }
+
+  /* ---------------------------- control panel ---------------------------- */
+
+  #control { position: relative; padding: 18px clamp(14px, 3vw, 34px) 40px; }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding-bottom: 16px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand { display: flex; align-items: center; gap: 12px; }
+
+  .mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: rgba(245, 98, 155, .12);
+    border: 1px solid rgba(245, 98, 155, .45);
+    color: var(--pink);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: .5px;
+  }
+
+  .brand-copy .eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2.2px;
+    color: var(--pink);
+    text-transform: uppercase;
+  }
+  .brand-copy h1 { margin: 2px 0 0; font-size: clamp(20px, 2.4vw, 27px); font-weight: 700; }
+
+  .topbar-spacer { flex: 1 1 auto; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+    gap: 16px;
+    align-items: start;
+    max-width: 1220px;
+    margin: 0 auto;
+  }
+  .stack { display: grid; gap: 16px; }
+
+  @media (max-width: 980px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* clock */
+  .clock-readout {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .clock-readout .time {
+    font-family: var(--mono);
+    font-size: clamp(40px, 6vw, 62px);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--pink);
+    font-variant-numeric: tabular-nums;
+  }
+  .clock-readout .unit { padding-bottom: 8px; }
+  .clock-readout.critical .time { color: var(--danger); }
+  .clock-readout.zero .time { color: var(--danger); }
+
+  .meter {
+    height: 6px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, .08);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .meter > div {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, var(--pink), var(--violet));
+    transition: width .1s linear;
+  }
+
+  /* teams */
+  .team-row {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    background: rgba(255, 255, 255, .02);
+  }
+  .team-row + .team-row { margin-top: 12px; }
+  .team-row.active {
+    border-color: rgba(255, 196, 107, .55);
+    background: rgba(255, 196, 107, .07);
+  }
+  .team-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .team-top .field { flex: 1 1 auto; font-weight: 600; }
+
+  .score-line { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .score-value {
+    font-family: var(--mono);
+    font-size: 38px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--gold);
+    min-width: 74px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .strike-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 122, 138, .28);
+    background: rgba(255, 122, 138, .1);
+  }
+  .strike-dots { display: flex; gap: 4px; }
+  .strike-dots i {
+    width: 9px;
+    height: 14px;
+    border-radius: 2px;
+    background: rgba(255, 122, 138, .22);
+    border: 1px solid rgba(255, 122, 138, .45);
+  }
+  .strike-dots i.on { background: var(--danger); box-shadow: 0 0 10px rgba(255, 122, 138, .55); }
+  .strike-count { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--danger); }
+
+  .save-bar { display: grid; gap: 10px; }
+  .save-btn {
+    width: 100%;
+    padding: 16px 18px;
+    border: 0;
+    border-radius: 14px;
+    color: #1A0C14;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    cursor: pointer;
+    background: linear-gradient(90deg, var(--pink), var(--violet));
+    box-shadow: 0 10px 30px rgba(245, 98, 155, .28);
+  }
+  .save-btn:hover { filter: brightness(1.06); }
+  .save-btn:active { transform: translateY(1px); }
+  .save-btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+
+  .status-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .status-line .mono { letter-spacing: 1.2px; }
+
+  .hint { color: var(--faint); font-size: 12px; line-height: 1.55; margin: 12px 0 0; }
+
+  /* ------------------------------ main display ------------------------------ */
+
+  #display {
+    position: fixed;
+    inset: 0;
+    grid-template-rows: auto 1fr auto;
+    gap: clamp(10px, 1.4vw, 26px);
+    padding: clamp(14px, 2vw, 40px);
+  }
+
+  .hud-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: clamp(8px, 1vw, 16px);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .ticker { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .ticker .tick {
+    font-family: var(--mono);
+    font-size: clamp(11px, 1vw, 15px);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text2);
+  }
+  .ticker .tick.gold { color: var(--gold); }
+  .ticker .sep { color: var(--faint); }
+
+  .hud-brand { display: flex; align-items: center; gap: 10px; }
+  .hud-brand .mark { width: clamp(34px, 3vw, 46px); height: clamp(34px, 3vw, 46px); }
+  .hud-brand .word {
+    font-family: var(--mono);
+    font-size: clamp(10px, .95vw, 14px);
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .scene {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(12px, 2.4vw, 54px);
+    min-height: 0;
+  }
+
+  .team {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: clamp(16px, 1.6vw, 26px);
+    background: rgba(21, 16, 31, .82);
+    padding: clamp(16px, 2vw, 34px);
+    display: grid;
+    gap: clamp(8px, 1vw, 18px);
+    min-width: 0;
+    transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  }
+  .team .name {
+    font-size: clamp(26px, 3.4vw, 64px);
+    font-weight: 700;
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+  .team .points {
+    font-family: var(--mono);
+    font-size: clamp(58px, 8vw, 150px);
+    font-weight: 700;
+    line-height: .92;
+    color: var(--gold);
+    font-variant-numeric: tabular-nums;
+  }
+  .team .points.negative { color: var(--danger); }
+
+  .team .foot { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .strikes-display { display: flex; align-items: center; gap: 10px; }
+  .strikes-display .bars { display: flex; gap: 5px; }
+  .strikes-display .bars i {
+    width: clamp(9px, .8vw, 14px);
+    height: clamp(18px, 1.8vw, 30px);
+    border-radius: 3px;
+    background: rgba(255, 122, 138, .18);
+    border: 1px solid rgba(255, 122, 138, .4);
+  }
+  .strikes-display .bars i.on { background: var(--danger); box-shadow: 0 0 16px rgba(255, 122, 138, .5); }
+  .strikes-display .num {
+    font-family: var(--mono);
+    font-size: clamp(11px, 1.05vw, 16px);
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    color: var(--danger);
+  }
+
+  .team.active {
+    border-color: rgba(255, 196, 107, .75);
+    background: rgba(255, 196, 107, .06);
+    box-shadow: 0 0 0 1px rgba(255, 196, 107, .22) inset, 0 0 70px rgba(255, 196, 107, .12);
+  }
+  .team.active::after {
+    content: 'ON THE FLOOR';
+    position: absolute;
+    top: -1px;
+    right: clamp(12px, 1.4vw, 22px);
+    transform: translateY(-50%);
+    padding: 5px 11px;
+    border-radius: 99px;
+    font-family: var(--mono);
+    font-size: clamp(9px, .8vw, 12px);
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #1A0C14;
+    background: var(--gold);
+  }
+
+  .clock-panel { text-align: center; display: grid; gap: clamp(4px, .6vw, 12px); min-width: 0; }
+  .clock-panel .label { justify-self: center; }
+  .clock-big {
+    font-family: var(--mono);
+    font-weight: 700;
+    line-height: .86;
+    font-size: clamp(96px, 17vw, 300px);
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    transition: color .15s ease;
+  }
+  .clock-big.critical {
+    color: var(--danger);
+    animation: flash .6s steps(2, end) infinite;
+  }
+  .clock-big.zero { color: var(--danger); animation: none; }
+  .clock-big.paused { color: var(--text2); }
+
+  @keyframes flash {
+    0%, 100% { opacity: 1; text-shadow: 0 0 60px rgba(255, 122, 138, .55); }
+    50% { opacity: .35; text-shadow: none; }
+  }
+
+  .hud-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    border-top: 1px solid var(--border);
+    padding-top: clamp(8px, 1vw, 16px);
+    flex-wrap: wrap;
+  }
+  .hud-bottom .legend {
+    font-family: var(--mono);
+    font-size: clamp(9px, .85vw, 13px);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+  .hud-bottom .stamp { display: flex; align-items: center; gap: 10px; }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    box-shadow: 0 0 10px rgba(84, 229, 160, .8);
+    animation: breathe 2.4s ease-in-out infinite;
+  }
+  @keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+  @media (max-width: 860px) {
+    .scene { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .clock-panel { order: -1; }
+    .clock-big { font-size: clamp(64px, 20vw, 130px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .clock-big.critical { animation: none; }
+    .live-dot { animation: none; }
+    .meter > div { transition: none; }
+  }
+</style>
+</head>
+<body data-view="control">
+
+<!-- ============================== CONTROL PANEL ============================== -->
+<main id="control" class="view" aria-label="Control panel">
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">BB</div>
+      <div class="brand-copy">
+        <div class="eyebrow">Brain Brawl</div>
+        <h1>Control panel</h1>
+      </div>
+    </div>
+
+    <div class="topbar-spacer"></div>
+
+    <span class="pill cyan" id="linkPill">Saved on this device</span>
+    <button class="btn cyan" id="openDisplay" type="button">Open main display</button>
+    <button class="btn" id="previewDisplay" type="button">Preview display</button>
+  </header>
+
+  <div class="layout">
+    <div class="stack">
+
+      <!-- Timer -->
+      <section class="card" aria-labelledby="timerTitle">
+        <div class="card-head">
+          <div>
+            <h2 class="card-title" id="timerTitle">Timer</h2>
+            <p class="card-sub">Toss-up 30s, bonus 60s, or set any duration</p>
+          </div>
+          <span class="pill" id="timerState">Paused</span>
+        </div>
+
+        <div class="clock-readout" id="clockReadout">
+          <span class="time" id="controlClock">0:30</span>
+          <span class="unit mono" id="controlDuration">Toss-up</span>
+        </div>
+        <div class="meter"><div id="controlMeter"></div></div>
+
+        <div class="row">
+          <button class="btn pink" id="startTimer" type="button">Start</button>
+          <button class="btn" id="pauseTimer" type="button">Pause</button>
+          <button class="btn" id="resetTimer" type="button">Reset</button>
+          <span style="flex:1 1 auto"></span>
+          <button class="btn" data-preset="30000" type="button">Toss-up 30s</button>
+          <button class="btn" data-preset="60000" type="button">Bonus 60s</button>
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <label class="mono" for="customSeconds" style="min-width:96px">Custom (seconds)</label>
+          <input class="field" id="customSeconds" type="number" min="5" max="3600" step="5" value="30"
+                 style="max-width:120px" inputmode="numeric">
+          <button class="btn" id="applyCustom" type="button">Set duration</button>
+        </div>
+      </section>
+
+      <!-- Round tracker -->
+      <section class="card" aria-labelledby="roundTitle">
+        <div class="card-head">
+          <div>
+            <h2 class="card-title" id="roundTitle">Round &amp; question</h2>
+            <p class="card-sub">Shown on the projector ticker</p>
+          </div>
+          <span class="pill gold" id="roundPill">Round 1</span>
+        </div>
+
+        <div class="row" id="roundButtons">
+          <button class="btn gold" data-round="Round 1" type="button">Round 1</button>
+          <button class="btn" data-round="Round 2" type="button">Round 2</button>
+          <button class="btn" data-round="Finals" type="button">Finals</button>
+        </div>
+
+        <div class="row" style="margin-top:14px">
+          <span class="mono" style="min-width:96px">Question</span>
+          <button class="btn" id="qMinus" type="button" aria-label="Previous question">&minus;</button>
+          <span class="score-value" id="questionValue" style="font-size:26px;min-width:52px;text-align:center">01</span>
+          <button class="btn" id="qPlus" type="button" aria-label="Next question">+</button>
+          <span style="flex:1 1 auto"></span>
+          <button class="btn danger" id="strikeAll" type="button">Clear strikes</button>
+        </div>
+      </section>
+
+    </div>
+
+    <div class="stack">
+
+      <!-- Teams -->
+      <section class="card" aria-labelledby="teamsTitle">
+        <div class="card-head">
+          <div>
+            <h2 class="card-title" id="teamsTitle">Teams</h2>
+            <p class="card-sub">Tap a team to put them on the floor</p>
+          </div>
+          <span class="pill gold" id="activePill">Team A active</span>
+        </div>
+
+        <div id="teamList"></div>
+      </section>
+
+      <!-- Save -->
+      <section class="card" aria-labelledby="saveTitle">
+        <div class="card-head">
+          <div>
+            <h2 class="card-title" id="saveTitle">Push to the display</h2>
+            <p class="card-sub">Changes save as you type; this forces a refresh</p>
+          </div>
+          <span class="pill cyan" id="savePill">Ready</span>
+        </div>
+
+        <div class="save-bar">
+          <button class="save-btn" id="saveAll" type="button">Save &amp; update display</button>
+          <div class="status-line">
+            <span class="mono" id="lastSaved">Not saved yet</span>
+            <button class="btn danger" id="resetAll" type="button">Reset match</button>
+          </div>
+        </div>
+
+        <p class="hint">
+          Put this window on the laptop and the display window on the projector. If the second
+          screen is blank, click inside the display window and double-click for fullscreen.
+        </p>
+      </section>
+
+    </div>
+  </div>
+</main>
+
+<!-- ============================== MAIN DISPLAY ============================== -->
+<main id="display" class="view" aria-label="Main display" role="timer">
+  <header class="hud-top">
+    <div class="ticker">
+      <span class="tick gold" id="dRound">Round 1</span>
+      <span class="sep">&middot;</span>
+      <span class="tick" id="dQuestion">Question 01</span>
+      <span class="sep">&middot;</span>
+      <span class="tick" id="dDuration">Toss-up 30s</span>
+    </div>
+
+    <div class="hud-brand">
+      <div class="mark" aria-hidden="true">BB</div>
+      <span class="word">Brain Brawl</span>
+    </div>
+
+    <div class="ticker">
+      <span class="pill" id="dState">Paused</span>
+    </div>
+  </header>
+
+  <div class="scene">
+    <article class="team" id="teamA" aria-label="Team A">
+      <div class="name" id="nameA">Team A</div>
+      <div class="points" id="pointsA">0</div>
+      <div class="foot">
+        <div class="strikes-display">
+          <div class="bars" id="strikesA" aria-hidden="true"><i></i><i></i><i></i></div>
+          <span class="num" id="strikeTextA">0 strikes</span>
+        </div>
+      </div>
+    </article>
+
+    <div class="clock-panel">
+      <span class="pill" id="clockLabel">Toss-up</span>
+      <div class="clock-big" id="dClock" aria-live="off">0:30</div>
+    </div>
+
+    <article class="team" id="teamB" aria-label="Team B">
+      <div class="name" id="nameB">Team B</div>
+      <div class="points" id="pointsB">0</div>
+      <div class="foot">
+        <div class="strikes-display">
+          <div class="bars" id="strikesB" aria-hidden="true"><i></i><i></i><i></i></div>
+          <span class="num" id="strikeTextB">0 strikes</span>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <footer class="hud-bottom">
+    <span class="legend">NJROTC academic competition &middot; Brain Brawl</span>
+    <div class="stamp">
+      <span class="legend" id="dUpdated">Live</span>
+      <span class="live-dot" aria-hidden="true"></span>
+    </div>
+  </footer>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var STORE_KEY = 'brainbrawl.hud.v1';
+  var STATE_POLL_MS = 1000;   // safety net if a browser drops storage events
+  var ROUNDS = ['Round 1', 'Round 2', 'Finals'];
+  var PRESETS = { 30000: 'Toss-up 30s', 60000: 'Bonus 60s' };
+  var DEFAULT_SECONDS = 30;
+
+  /* ------------------------------- state ------------------------------- */
+
+  function defaultState() {
+    return {
+      teams: [
+        { id: 'a', name: 'Team A', points: 0, strikes: 0 },
+        { id: 'b', name: 'Team B', points: 0, strikes: 0 }
+      ],
+      active: 'a',
+      round: ROUNDS[0],
+      question: 1,
+      timer: {
+        durationMs: DEFAULT_SECONDS * 1000,
+        remainingMs: DEFAULT_SECONDS * 1000,
+        running: false,
+        endsAt: null
+      },
+      updatedAt: 0
+    };
+  }
+
+  function clampInt(value, min, max, fallback) {
+    var n = parseInt(value, 10);
+    if (isNaN(n)) n = fallback;
+    return Math.min(max, Math.max(min, n));
+  }
+
+  function normalize(raw) {
+    var base = defaultState();
+    if (!raw || typeof raw !== 'object') return base;
+
+    var teams = Array.isArray(raw.teams) ? raw.teams : [];
+    base.teams = base.teams.map(function (slot, i) {
+      var incoming = teams[i] || {};
+      return {
+        id: slot.id,
+        name: typeof incoming.name === 'string' && incoming.name.trim()
+          ? incoming.name.trim().slice(0, 40)
+          : slot.name,
+        points: clampInt(incoming.points, -9999, 9999, 0),
+        strikes: clampInt(incoming.strikes, 0, 99, 0)
+      };
+    });
+
+    base.active = raw.active === 'b' ? 'b' : 'a';
+    base.round = ROUNDS.indexOf(raw.round) >= 0 ? raw.round : ROUNDS[0];
+    base.question = clampInt(raw.question, 1, 999, 1);
+
+    var timer = raw.timer || {};
+    var durationMs = clampInt(timer.durationMs, 1000, 3600000, DEFAULT_SECONDS * 1000);
+    var running = timer.running === true && typeof timer.endsAt === 'number';
+    var remainingMs = clampInt(timer.remainingMs, 0, durationMs, durationMs);
+
+    base.timer = {
+      durationMs: durationMs,
+      remainingMs: remainingMs,
+      running: running,
+      endsAt: running ? timer.endsAt : null
+    };
+    base.updatedAt = typeof raw.updatedAt === 'number' ? raw.updatedAt : 0;
+    return base;
+  }
+
+  function readState() {
+    try {
+      var raw = window.localStorage.getItem(STORE_KEY);
+      return raw ? normalize(JSON.parse(raw)) : defaultState();
+    } catch (err) {
+      return defaultState();
+    }
+  }
+
+  function writeState(next) {
+    next.updatedAt = Date.now();
+    try {
+      window.localStorage.setItem(STORE_KEY, JSON.stringify(next));
+    } catch (err) {
+      /* private mode: the panel still works on this screen */
+    }
+    return next;
+  }
+
+  /* ------------------------------ helpers ------------------------------ */
+
+  function remaining(state) {
+    if (!state.timer.running) return state.timer.remainingMs;
+    return Math.max(0, state.timer.endsAt - Date.now());
+  }
+
+  function formatClock(ms) {
+    var safe = Math.max(0, ms);
+    if (safe > 0 && safe < 10000) return (safe / 1000).toFixed(1);
+    var total = Math.ceil(safe / 1000);
+    var minutes = Math.floor(total / 60);
+    var seconds = total % 60;
+    return minutes + ':' + (seconds < 10 ? '0' + seconds : String(seconds));
+  }
+
+  function formatStamp(ts) {
+    if (!ts) return 'Not saved yet';
+    var d = new Date(ts);
+    return 'Saved ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  function durationLabel(ms) {
+    return PRESETS[ms] || (Math.round(ms / 1000) + 's round');
+  }
+
+  function padded(n) {
+    return n < 10 ? '0' + n : String(n);
+  }
+
+  function setText(el, value) {
+    if (el && el.textContent !== value) el.textContent = value;
+  }
+
+  /* ----------------------------- view switch ----------------------------- */
+
+  var view = window.location.hash === '#display' ? 'display' : 'control';
+  document.body.setAttribute('data-view', view);
+  document.title = view === 'display' ? 'Brain Brawl — Main Display' : 'Brain Brawl — Control Panel';
+
+  var state = readState();
+  var isControl = view === 'control';
+
+  /* --------------------------- control bindings --------------------------- */
+
+  var el = {};
+  function $(id) { return document.getElementById(id); }
+
+  function buildTeamControls() {
+    var list = $('teamList');
+    if (!list) return;
+    list.innerHTML = '';
+
+    state.teams.forEach(function (team, index) {
+      var wrap = document.createElement('div');
+      wrap.className = 'team-row';
+      wrap.dataset.index = String(index);
+      wrap.innerHTML =
+        '<div class="team-top">' +
+          '<input class="field team-name" type="text" maxlength="40" aria-label="Team ' + (index + 1) + ' name">' +
+          '<button class="btn gold active-btn" type="button" aria-pressed="false">On the floor</button>' +
+        '</div>' +
+        '<div class="score-line">' +
+          '<span class="score-value"></span>' +
+          '<button class="btn" data-delta="10" type="button">+10</button>' +
+          '<button class="btn" data-delta="5" type="button">+5</button>' +
+          '<button class="btn" data-delta="-5" type="button">&minus;5</button>' +
+          '<button class="btn" data-delta="-10" type="button">&minus;10</button>' +
+          '<span style="flex:1 1 auto"></span>' +
+          '<div class="strike-box">' +
+            '<button class="btn danger" data-strike="-1" type="button" aria-label="Remove a strike">&minus;</button>' +
+            '<div class="strike-dots" aria-hidden="true"><i></i><i></i><i></i></div>' +
+            '<span class="strike-count">0</span>' +
+            '<button class="btn danger" data-strike="1" type="button" aria-label="Add a strike">+</button>' +
+          '</div>' +
+        '</div>';
+
+      var nameInput = wrap.querySelector('.team-name');
+      nameInput.value = team.name;
+      nameInput.addEventListener('input', function () {
+        state.teams[index].name = nameInput.value.trim() || 'Team ' + (index === 0 ? 'A' : 'B');
+        commit();
+      });
+
+      wrap.querySelector('.active-btn').addEventListener('click', function () {
+        state.active = team.id;
+        commit();
+      });
+
+      Array.prototype.forEach.call(wrap.querySelectorAll('[data-delta]'), function (button) {
+        button.addEventListener('click', function () {
+          state.teams[index].points += parseInt(button.dataset.delta, 10);
+          commit();
+        });
+      });
+
+      Array.prototype.forEach.call(wrap.querySelectorAll('[data-strike]'), function (button) {
+        button.addEventListener('click', function () {
+          var next = state.teams[index].strikes + parseInt(button.dataset.strike, 10);
+          state.teams[index].strikes = Math.min(99, Math.max(0, next));
+          commit();
+        });
+      });
+
+      wrap.addEventListener('click', function (event) {
+        if (event.target.closest('button,input')) return;
+        state.active = team.id;
+        commit();
+      });
+
+      list.appendChild(wrap);
+    });
+  }
+
+  function renderControl() {
+    if (!isControl) return;
+
+    var ms = remaining(state);
+    var clock = $('controlClock');
+    setText(clock, formatClock(ms));
+    setText($('controlDuration'), durationLabel(state.timer.durationMs).toUpperCase());
+
+    var readout = $('clockReadout');
+    readout.classList.toggle('critical', state.timer.running && ms <= 5000 && ms > 0);
+    readout.classList.toggle('zero', ms <= 0);
+
+    var meter = $('controlMeter');
+    meter.style.width = Math.max(0, Math.min(100, (ms / state.timer.durationMs) * 100)) + '%';
+
+    setText($('timerState'), state.timer.running ? (ms <= 0 ? 'Time' : 'Running') : 'Paused');
+    setText($('roundPill'), state.round);
+    setText($('questionValue'), padded(state.question));
+    setText($('activePill'), (state.teams[state.active === 'b' ? 1 : 0].name) + ' active');
+    setText($('lastSaved'), formatStamp(state.updatedAt));
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-round]'), function (button) {
+      button.setAttribute('aria-pressed', String(button.dataset.round === state.round));
+      button.classList.toggle('gold', button.dataset.round === state.round);
+    });
+
+    state.teams.forEach(function (team, index) {
+      var row = document.querySelector('.team-row[data-index="' + index + '"]');
+      if (!row) return;
+      row.classList.toggle('active', team.id === state.active);
+      var nameInput = row.querySelector('.team-name');
+      if (document.activeElement !== nameInput) nameInput.value = team.name;
+      setText(row.querySelector('.score-value'), String(team.points));
+      setText(row.querySelector('.strike-count'), String(team.strikes));
+      Array.prototype.forEach.call(row.querySelectorAll('.strike-dots i'), function (dot, i) {
+        dot.classList.toggle('on', i < Math.min(3, team.strikes));
+      });
+      var activeBtn = row.querySelector('.active-btn');
+      activeBtn.setAttribute('aria-pressed', String(team.id === state.active));
+    });
+  }
+
+  /* ------------------------------ display ------------------------------ */
+
+  function renderDisplay() {
+    if (isControl) return;
+
+    state.teams.forEach(function (team, index) {
+      var suffix = index === 0 ? 'A' : 'B';
+      setText($('name' + suffix), team.name);
+      var points = $('points' + suffix);
+      setText(points, String(team.points));
+      points.classList.toggle('negative', team.points < 0);
+      setText($('strikeText' + suffix), team.strikes === 1 ? '1 strike' : team.strikes + ' strikes');
+      Array.prototype.forEach.call(document.querySelectorAll('#strikes' + suffix + ' i'), function (dot, i) {
+        dot.classList.toggle('on', i < Math.min(3, team.strikes));
+      });
+      $('team' + suffix).classList.toggle('active', team.id === state.active);
+    });
+
+    setText($('dRound'), state.round);
+    setText($('dQuestion'), 'Question ' + padded(state.question));
+    setText($('dDuration'), durationLabel(state.timer.durationMs));
+    setText($('clockLabel'), durationLabel(state.timer.durationMs).toUpperCase());
+    setText($('dUpdated'), state.timer.running ? 'Live' : 'Paused');
+    setText($('dState'), state.timer.running ? 'Running' : 'Paused');
+
+    var clock = $('dClock');
+    var meter = state.timer;
+    var ms = remaining(state);
+    var label = formatClock(ms);
+
+    if (ms <= 0) {
+      label = 'TIME';
+      clock.classList.add('zero');
+      clock.classList.remove('critical');
+    } else {
+      clock.classList.remove('zero');
+      clock.classList.toggle('critical', ms <= 5000);
+      clock.classList.toggle('paused', !state.timer.running);
+    }
+    setText(clock, label);
+    void meter;
+  }
+
+  /* ------------------------------ writing ------------------------------ */
+
+  function commit(forceFlash) {
+    state = writeState(state);
+    renderControl();
+    renderDisplay();
+
+    if (isControl) {
+      var pill = $('savePill');
+      if (pill) {
+        pill.textContent = forceFlash ? 'Display updated' : 'Saved';
+        pill.classList.add('cyan');
+        window.clearTimeout(commit.resetTimer);
+        commit.resetTimer = window.setTimeout(function () {
+          pill.textContent = 'Ready';
+        }, forceFlash ? 1800 : 900);
+      }
+    }
+  }
+
+  /* ------------------------------ actions ------------------------------ */
+
+  if (isControl) {
+    buildTeamControls();
+
+    $('startTimer').addEventListener('click', function () {
+      if (remaining(state) <= 0) state.timer.remainingMs = state.timer.durationMs;
+      if (state.timer.remainingMs <= 0) state.timer.remainingMs = state.timer.durationMs;
+      state.timer.running = true;
+      state.timer.endsAt = Date.now() + state.timer.remainingMs;
+      commit();
+    });
+
+    $('pauseTimer').addEventListener('click', function () {
+      state.timer.remainingMs = remaining(state);
+      state.timer.running = false;
+      state.timer.endsAt = null;
+      commit();
+    });
+
+    $('resetTimer').addEventListener('click', function () {
+      state.timer.running = false;
+      state.timer.endsAt = null;
+      state.timer.remainingMs = state.timer.durationMs;
+      commit();
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-preset]'), function (button) {
+      button.addEventListener('click', function () {
+        var ms = parseInt(button.dataset.preset, 10);
+        state.timer.durationMs = ms;
+        state.timer.remainingMs = ms;
+        state.timer.running = false;
+        state.timer.endsAt = null;
+        $('customSeconds').value = String(ms / 1000);
+        commit();
+      });
+    });
+
+    $('applyCustom').addEventListener('click', function () {
+      var seconds = clampInt($('customSeconds').value, 5, 3600, 30);
+      $('customSeconds').value = String(seconds);
+      state.timer.durationMs = seconds * 1000;
+      state.timer.remainingMs = state.timer.durationMs;
+      state.timer.running = false;
+      state.timer.endsAt = null;
+      commit();
+    });
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-round]'), function (button) {
+      button.addEventListener('click', function () {
+        state.round = button.dataset.round;
+        commit();
+      });
+    });
+
+    $('qPlus').addEventListener('click', function () {
+      state.question = Math.min(999, state.question + 1);
+      commit();
+    });
+    $('qMinus').addEventListener('click', function () {
+      state.question = Math.max(1, state.question - 1);
+      commit();
+    });
+
+    $('strikeAll').addEventListener('click', function () {
+      state.teams.forEach(function (team) { team.strikes = 0; });
+      commit();
+    });
+
+    $('saveAll').addEventListener('click', function () { commit(true); });
+
+    $('resetAll').addEventListener('click', function () {
+      if (!window.confirm('Reset points, strikes, timer and question number?')) return;
+      var fresh = defaultState();
+      fresh.teams.forEach(function (team, i) { team.name = state.teams[i].name; });
+      fresh.round = state.round;
+      state = fresh;
+      $('customSeconds').value = String(state.timer.durationMs / 1000);
+      commit(true);
+    });
+
+    $('openDisplay').addEventListener('click', function () {
+      var url = window.location.href.split('#')[0] + '#display';
+      var win = window.open(url, 'brainbrawl-display', 'popup=yes,width=1600,height=900');
+      if (!win) {
+        window.alert('The display window was blocked. Allow pop-ups for this page, then try again.');
+      }
+    });
+
+    $('previewDisplay').addEventListener('click', function () {
+      window.location.hash = '#display';
+    });
+  }
+
+  /* ------------------------- the clock keeps itself ------------------------- */
+
+  function tick() {
+    if (state.timer.running) {
+      var ms = remaining(state);
+      if (ms <= 0 && state.timer.running) {
+        state.timer.remainingMs = 0;
+        state.timer.running = false;
+        state.timer.endsAt = null;
+        commit();
+        return;
+      }
+      if (isControl) renderControl();
+      else renderClockOnly();
+    }
+  }
+
+  function renderClockOnly() {
+    var ms = remaining(state);
+    var clock = $('dClock');
+    if (!clock) return;
+    var label = ms <= 0 ? 'TIME' : formatClock(ms);
+    setText(clock, label);
+    clock.classList.toggle('zero', ms <= 0);
+    clock.classList.toggle('critical', ms > 0 && ms <= 5000);
+    clock.classList.toggle('paused', !state.timer.running);
+    setText($('dState'), ms <= 0 ? 'Time' : (state.timer.running ? 'Running' : 'Paused'));
+    setText($('dUpdated'), state.timer.running ? 'Live' : 'Paused');
+  }
+
+  /* ------------------------------ syncing ------------------------------ */
+
+  function adoptExternal(raw) {
+    var next;
+    try {
+      next = normalize(JSON.parse(raw));
+    } catch (err) {
+      return;
+    }
+    state = next;
+    renderControl();
+    renderDisplay();
+    if (isControl) setText($('lastSaved'), formatStamp(state.updatedAt));
+  }
+
+  window.addEventListener('storage', function (event) {
+    if (event.key !== STORE_KEY || event.newValue === null) return;
+    adoptExternal(event.newValue);
+  });
+
+  // Second line of defence: some setups (file:// in a few browsers) suppress
+  // storage events, so also look for a newer saved state once a second.
+  window.setInterval(function () {
+    var raw;
+    try {
+      raw = window.localStorage.getItem(STORE_KEY);
+    } catch (err) {
+      return;
+    }
+    if (!raw) return;
+    var stored;
+    try {
+      stored = JSON.parse(raw);
+    } catch (err) {
+      return;
+    }
+    if (stored && stored.updatedAt && stored.updatedAt > state.updatedAt) {
+      adoptExternal(raw);
+    }
+  }, STATE_POLL_MS);
+
+  if (isControl) {
+    $('customSeconds').value = String(state.timer.durationMs / 1000);
+    renderControl();
+  } else {
+    renderDisplay();
+    document.addEventListener('dblclick', function () {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+      }
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'f' || event.key === 'F') {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+      }
+    });
+  }
+
+  window.addEventListener('hashchange', function () {
+    window.location.reload();
+  });
+
+  // A timer, not requestAnimationFrame: browsers suspend animation frames for
+  // a window that is hidden or behind another, which would freeze the
+  // projector clock. Intervals keep running (throttled to ~1s when hidden),
+  // and the countdown is computed from endsAt, so it never drifts.
+  window.setInterval(tick, 200);
+})();
+</script>
+</body>
+</html>
