@@ -73,7 +73,10 @@ jobs:
 
   windows:
     name: Windows installer + portable (x64)
-    runs-on: windows-latest
+    # Flutter 3.16.9 only knows the Visual Studio 16 (2019) and 17 (2022) CMake
+    # generators and falls back to 16 for anything newer, which fails on a
+    # runner whose Visual Studio is newer than 2022. This image ships VS 2022.
+    runs-on: windows-2022
     permissions:
       contents: write
     steps:
@@ -101,11 +104,18 @@ jobs:
         run: |
           reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" `
             /t REG_DWORD /f /v AllowDevelopmentWithoutDevLicense /d 1
+      - name: Record the toolchain
+        shell: pwsh
+        run: |
+          "===== flutter doctor =====" | Out-File -FilePath windows-build.log -Encoding utf8
+          flutter doctor -v 2>&1 | Out-File -FilePath windows-build.log -Append -Encoding utf8
+          "===== vswhere =====" | Out-File -FilePath windows-build.log -Append -Encoding utf8
+          & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -products * 2>&1 | Out-File -FilePath windows-build.log -Append -Encoding utf8
       - run: flutter pub get
       - name: Build the Windows app
         shell: pwsh
         run: |
-          flutter build windows --release 2>&1 | Tee-Object -FilePath windows-build.log
+          flutter build windows --release 2>&1 | Tee-Object -FilePath windows-build.log -Append
           exit $LASTEXITCODE
       # A failing Windows build leaves no readable trace for anyone without
       # access to the Actions API, so the log is pushed to a throwaway branch
