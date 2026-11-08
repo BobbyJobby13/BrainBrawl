@@ -1,0 +1,93 @@
+===== flutter doctor =====
+[√] Flutter (Channel stable, 3.16.9, on Microsoft Windows [Version 10.0.20348.5773], locale en-US)
+    • Flutter version 3.16.9 on channel stable at C:\hostedtoolcache\windows\flutter\stable-3.16.9-x64\flutter
+    • Upstream repository https://github.com/flutter/flutter.git
+    • Framework revision 41456452f2 (2 years, 9 months ago), 2024-01-25 10:06:23 -0800
+    • Engine revision f40e976bed
+    • Dart version 3.2.6
+    • DevTools version 2.28.5
+
+[√] Windows Version (Installed version of Windows is version 10 or higher)
+
+[!] Android toolchain - develop for Android devices (Android SDK version 37.0.0)
+    • Android SDK at C:\Android\android-sdk
+    • Platform android-37.2-beta3, build-tools 37.0.0
+    • ANDROID_HOME = C:\Android\android-sdk
+    • ANDROID_SDK_ROOT = C:\Android\android-sdk
+    • Java binary at: C:\hostedtoolcache\windows\Java_Temurin-Hotspot_jdk\8.0.504-1\x64\bin\java
+    X Could not determine java version
+    ! Some Android licenses not accepted. To resolve this, run: flutter doctor --android-licenses
+
+[√] Chrome - develop for the web
+    • Chrome at C:\Program Files\Google\Chrome\Application\chrome.exe
+
+[√] Visual Studio - develop Windows apps (Visual Studio Enterprise 2022 17.14.44)
+    • Visual Studio at C:\Program Files\Microsoft Visual Studio\2022\Enterprise
+    • Visual Studio Enterprise 2022 version 17.14.37827.9
+    • Windows 10 SDK version 10.0.26100.0
+
+[!] Android Studio (not installed)
+    • Android Studio not found; download from https://developer.android.com/studio/index.html
+      (or visit https://flutter.dev/docs/get-started/install/windows#android-setup for detailed instructions).
+
+[√] Connected device (2 available)
+    • Windows (desktop) • windows • windows-x64    • Microsoft Windows [Version 10.0.20348.5773]
+    • Chrome (web)      • chrome  • web-javascript • unknown
+
+[√] Network resources
+    • All expected network resources are available.
+
+! Doctor found issues in 2 categories.
+===== vswhere =====
+Visual Studio Locator version 3.1.7+f39851e70f [query version 3.12.2140.44225]
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+instanceId: 4d04731e
+installDate: 11/1/2026 9:54:29 PM
+installationName: VisualStudio/17.14.44+37827.9
+installationPath: C:\Program Files\Microsoft Visual Studio\2022\Enterprise
+installationVersion: 17.14.37827.9
+productId: Microsoft.VisualStudio.Product.Enterprise
+productPath: C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\devenv.exe
+state: 4294967295
+isComplete: 1
+isLaunchable: 1
+isPrerelease: 0
+isRebootRequired: 0
+displayName: Visual Studio Enterprise 2022
+description: Scalable, end-to-end solution for teams of any size
+channelId: VisualStudio.17.Release
+channelUri: https://aka.ms/vs/17/release/channel
+enginePath: C:\Program Files (x86)\Microsoft Visual Studio\Installer\resources\app\ServiceHub\Services\Microsoft.VisualStudio.Setup.Service
+installChannelUri: https://aka.ms/vs/17/release/channel
+installedChannelId: VisualStudio.17.Release
+installedChannelUri: https://aka.ms/vs/17/release/channel
+releaseNotes: https://docs.microsoft.com/en-us/visualstudio/releases/2022/release-notes-v17.14#17.14.44
+resolvedInstallationPath: C:\Program Files\Microsoft Visual Studio\2022\Enterprise
+thirdPartyNotices: https://go.microsoft.com/fwlink/?LinkId=661288
+updateDate: 2026-11-01T21:54:29.222124Z
+catalog_buildBranch: d17.14
+catalog_buildVersion: 17.14.37827.9
+catalog_id: VisualStudio/17.14.44+37827.9
+catalog_localBuild: build-lab
+catalog_manifestName: VisualStudio
+catalog_manifestType: installer
+catalog_productDisplayVersion: 17.14.44
+catalog_productLine: Dev17
+catalog_productLineVersion: 2022
+catalog_productMilestone: RTW
+catalog_productMilestoneIsPreRelease: False
+catalog_productName: Visual Studio
+catalog_productPatchVersion: 44
+catalog_productPreReleaseMilestoneSuffix: 1.0
+catalog_productSemanticVersion: 17.14.44+37827.9
+catalog_requiredEngineVersion: 3.14.2094.42856
+properties_campaignId: 
+properties_channelManifestId: VisualStudio.17.Release/17.14.44+37827.9
+properties_includeRecommended: 1
+properties_nickname: 
+properties_setupEngineFilePath: C:\Program Files (x86)\Microsoft Visual Studio\Installer\setup.exe
+
+windows/flutter/CMakeLists.txt does not use FLUTTER_TARGET_PLATFORM, updating.
+Building Windows application...                                    72.4s
+√  Built build\windows\x64\runner\Release\brainbrawl_frontend.exe (0.1MB).
