@@ -199,7 +199,11 @@ jobs:
     # without cutting a new version - handy while the console is still being
     # tweaked. The installers are already built by the two jobs above, so a
     # manual run costs nothing extra.
-    if: ${{ startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.attach_tag != '') }}
+    # A push to main publishes too, so the download page keeps pace with the
+    # console while it is still being tweaked. It no longer waits for BOTH
+    # installers: a failing Windows job used to hide a perfectly good macOS disk
+    # image, and the DMG is the only way to install on a Mac.
+    if: ${{ always() && (needs.macos.result == 'success' || needs.windows.result == 'success') }}
     needs: [macos, windows]
     runs-on: ubuntu-latest
     permissions:
@@ -210,6 +214,8 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+        # A platform that failed produced no artifact; ship the one that built.
+        continue-on-error: true
       # The single-file console and the questions folder ship next to the
       # installers, so a team can run a match from any laptop with no install.
       - name: Add the offline web console
@@ -221,17 +227,23 @@ jobs:
       - name: Create or update the release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.attach_tag || github.ref_name }}
+          TAG: ${{ (github.event_name == 'workflow_dispatch' && inputs.attach_tag) || (startsWith(github.ref, 'refs/tags/v') && github.ref_name) || 'v1.1.0' }}
         run: |
           set -euo pipefail
           if ! gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
             echo "::error::No tag named ${TAG} exists in this repository. Create the tag first, or type an existing one such as v1.1.0."
             exit 1
           fi
+          shopt -s nullglob
+          files=(dist/*)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::Nothing was produced by either platform, so there is nothing to publish."
+            exit 1
+          fi
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/* --clobber
+            gh release upload "$TAG" "${files[@]}" --clobber
           else
-            gh release create "$TAG" dist/* \
+            gh release create "$TAG" "${files[@]}" \
               --title "Brain Brawl ${TAG#v}" \
               --generate-notes
           fi
