@@ -155,6 +155,14 @@ jobs:
           $release = (Resolve-Path 'build\windows\x64\runner\Release').Path
           $msi = "Brain-Brawl-$env:VERSION-Windows.msi"
 
+          # light resolves a source path in the .wxs against its working directory,
+          # which here is the repo root, so a path relative to windows\installer
+          # pointed outside the checkout and the link failed. Pass the icon by
+          # absolute path instead, and fail loudly if it ever goes missing.
+          $icon = (Resolve-Path 'windows\runner\resources\app_icon.ico' -ErrorAction SilentlyContinue)
+          if (-not $icon) { throw 'windows\runner\resources\app_icon.ico is missing' }
+          $icon = $icon.Path
+
           # Harvest the whole Flutter bundle (exe, data folder, DLLs) into a WiX fragment.
           & "$wix\heat.exe" dir $release `
             -cg AppFiles -gg -g1 -sfrag -srd -dr INSTALLFOLDER `
@@ -163,7 +171,7 @@ jobs:
 
           New-Item -ItemType Directory -Force obj | Out-Null
           & "$wix\candle.exe" -arch x64 `
-            "-dSourceDir=$release" "-dVersion=$env:VERSION" `
+            "-dSourceDir=$release" "-dVersion=$env:VERSION" "-dIconFile=$icon" `
             -out obj\ windows\installer\Product.wxs windows\installer\Files.wxs
           if ($LASTEXITCODE -ne 0) { throw "candle failed with exit code $LASTEXITCODE" }
 

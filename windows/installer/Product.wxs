@@ -29,7 +29,10 @@
     <MajorUpgrade DowngradeErrorMessage="A newer version of Brain Brawl is already installed."/>
     <MediaTemplate EmbedCab="yes"/>
 
-    <Icon Id="AppIcon" SourceFile="..\runner\resources\app_icon.ico"/>
+    <!-- light resolves relative source paths against its working directory (the repo
+         root on CI), not against this file, so the icon arrives as an absolute path
+         in the IconFile variable set by the workflow. -->
+    <Icon Id="AppIcon" SourceFile="$(var.IconFile)"/>
     <Property Id="ARPPRODUCTICON" Value="AppIcon"/>
     <Property Id="ARPNOMODIFY" Value="1"/>
 
