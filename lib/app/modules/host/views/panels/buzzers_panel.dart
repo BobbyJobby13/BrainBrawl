@@ -20,16 +20,19 @@ class BuzzersPanel extends StatefulWidget {
 
 class _BuzzersPanelState extends State<BuzzersPanel> {
   late final TextEditingController _url;
+  late final TextEditingController _code;
 
   @override
   void initState() {
     super.initState();
     _url = TextEditingController(text: widget.controller.buzzerUrl.value);
+    _code = TextEditingController(text: widget.controller.buzzinCode.value);
   }
 
   @override
   void dispose() {
     _url.dispose();
+    _code.dispose();
     super.dispose();
   }
 
@@ -65,6 +68,112 @@ class _BuzzersPanelState extends State<BuzzersPanel> {
               ),
             ),
             const SizedBox(height: 16),
+            ConsoleCard(
+              title: 'buzzin.live room',
+              subtitle: 'Players buzz from their phones with this code',
+              trailing: Pill(
+                label: controller.buzzinCode.value.isEmpty ? 'NO CODE' : 'ROOM SET',
+                color: controller.buzzinCode.value.isEmpty
+                    ? Palette.textFaint
+                    : Palette.success,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  TextField(
+                    controller: _code,
+                    cursorColor: Palette.cyan,
+                    onChanged: (String value) {
+                      widget.controller.setBuzzinCode(value);
+                      // Pasting a room link leaves the raw URL in the field, so
+                      // swap in the code that was actually kept.
+                      final String cleaned =
+                          widget.controller.buzzinCode.value;
+                      if (cleaned != value && _code.text != cleaned) {
+                        _code.value = TextEditingValue(
+                          text: cleaned,
+                          selection: TextSelection.collapsed(
+                            offset: cleaned.length,
+                          ),
+                        );
+                      }
+                    },
+                    style: GoogleFonts.spaceMono(
+                      fontSize: 18,
+                      letterSpacing: 4,
+                      fontWeight: FontWeight.w700,
+                      color: Palette.textPrimary,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: '482913',
+                      hintStyle: GoogleFonts.spaceMono(
+                        fontSize: 18,
+                        letterSpacing: 4,
+                        color: Palette.textFaint,
+                      ),
+                      prefixIcon: const Icon(
+                        Icons.confirmation_number_outlined,
+                        size: 18,
+                        color: Palette.textFaint,
+                      ),
+                      filled: true,
+                      fillColor: Palette.surfaceRaised,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Palette.border),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            BorderSide(color: Palette.cyan.withOpacity(0.7)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: <Widget>[
+                      MiniAction(
+                        label: 'Open host dashboard',
+                        icon: Icons.open_in_new_rounded,
+                        color: Palette.cyan,
+                        filled: true,
+                        onTap: widget.controller.openBuzzinHost,
+                      ),
+                      MiniAction(
+                        label: 'Copy code',
+                        icon: Icons.copy_rounded,
+                        onTap: controller.buzzinCode.value.isEmpty
+                            ? null
+                            : widget.controller.copyBuzzinCode,
+                      ),
+                      MiniAction(
+                        label: controller.showBuzzinCode.value
+                            ? 'Hide game card'
+                            : 'Show game card',
+                        icon: Icons.visibility_rounded,
+                        onTap: widget.controller.toggleShowBuzzinCode,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'The game card puts this code on the projected screen. '
+                    'buzzin.live has no API, so this console cannot read its '
+                    'buzz order: watch the host dashboard, then press the digit '
+                    'for the player who buzzed first.',
+                    style: GoogleFonts.spaceGrotesk(
+                      fontSize: 11.5,
+                      height: 1.5,
+                      color: Palette.textFaint,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
             ConsoleCard(
               title: 'Point values',
               subtitle: 'Used by the quick Correct and Wrong buttons',

@@ -300,6 +300,7 @@ class _GamePanel extends StatelessWidget {
           const SizedBox(height: 14),
           _BuzzCard(controller),
           const SizedBox(height: 14),
+          _BuzzinCard(controller),
           _ScoreboardCard(controller),
           const SizedBox(height: 14),
           _HistoryCard(controller),
@@ -332,6 +333,7 @@ class _GamePanel extends StatelessWidget {
               const SizedBox(height: 14),
               _BuzzCard(controller),
               const SizedBox(height: 14),
+              _BuzzinCard(controller),
               question,
               const SizedBox(height: 14),
               _ScoreboardCard(controller),
@@ -788,6 +790,69 @@ class _RoundCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      );
+    });
+  }
+}
+
+/// The buzzin.live room code, sized to be read off a projected screen. Hidden
+/// until a code is set and the host turns the card on.
+class _BuzzinCard extends StatelessWidget {
+  const _BuzzinCard(this.controller);
+
+  final HostController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final String code = controller.buzzinCode.value;
+      if (code.isEmpty || !controller.showBuzzinCode.value) {
+        return const SizedBox.shrink();
+      }
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          decoration: BoxDecoration(
+            color: Palette.surface.withOpacity(0.92),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Palette.cyan.withOpacity(0.45), width: 1.4),
+            boxShadow: <BoxShadow>[
+              BoxShadow(
+                color: Palette.cyan.withOpacity(0.12),
+                blurRadius: 28,
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              const MonoLabel('Buzz in at', color: Palette.cyan),
+              const SizedBox(height: 4),
+              Text(
+                'buzzin.live',
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Palette.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                code,
+                style: GoogleFonts.spaceMono(
+                  fontSize: 46,
+                  height: 1.15,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 8,
+                  color: Palette.cyan,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     });

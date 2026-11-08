@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../platform/url_opener.dart';
 import '../models/game_models.dart';
 import '../models/quiz_question.dart';
 import '../services/buzzer_hub.dart';
@@ -61,6 +63,12 @@ class HostController extends GetxController {
   final RxList<String> lockedOut = <String>[].obs;
   final RxMap<String, String> deviceToPlayer = <String, String>{}.obs;
   final RxString buzzerUrl = ''.obs;
+
+  // buzzin.live room. The service is a hosted buzzer room with no API, so the
+  // console carries the code, opens its host dashboard, and can put the code on
+  // the projected card for the players to read.
+  final RxString buzzinCode = ''.obs;
+  final RxBool showBuzzinCode = false.obs;
 
   final RxInt tab = 0.obs;
   final RxBool ready = false.obs;
@@ -658,6 +666,42 @@ class HostController extends GetxController {
     _persist();
   }
 
+  /// buzzin.live hands out a short game code, but the host usually pastes the
+  /// whole room link out of a chat, so keep the trailing digits and drop the URL.
+  static String cleanBuzzinCode(String value) {
+    final String text = value.trim();
+    final RegExpMatch? trailing = RegExp(r'([0-9]{4,12})\s*$').firstMatch(text);
+    if (trailing != null) return trailing.group(1)!;
+    final String stripped = text.replaceAll(RegExp(r'[^0-9a-zA-Z]'), '');
+    return stripped.length <= 12 ? stripped : stripped.substring(0, 12);
+  }
+
+  void setBuzzinCode(String value) {
+    final String cleaned = cleanBuzzinCode(value);
+    if (buzzinCode.value == cleaned) return;
+    buzzinCode.value = cleaned;
+    _persist();
+  }
+
+  void setShowBuzzinCode(bool value) {
+    if (showBuzzinCode.value == value) return;
+    showBuzzinCode.value = value;
+    _persist();
+  }
+
+  void toggleShowBuzzinCode() => setShowBuzzinCode(!showBuzzinCode.value);
+
+  Future<void> copyBuzzinCode() async {
+    if (buzzinCode.value.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: buzzinCode.value));
+  }
+
+  /// Opens buzzin.live's own host dashboard in the system browser, so the buzz
+  /// order is read there while this console keeps the score.
+  Future<void> openBuzzinHost() => openExternalUrl('https://buzzin.live/host');
+
+  bool get buzzinReady => buzzinCode.value.isNotEmpty;
+
   /// Keys 1-9 follow roster order so a keyboard (or a USB buzzer box that types
   /// digits) works with no setup at all.
   void _syncKeyboardPairing() {
@@ -692,6 +736,8 @@ class HostController extends GetxController {
           'lockout': lockoutAfterWrong.value,
           'buzzerUrl': buzzerUrl.value,
           'devices': deviceToPlayer,
+          'buzzinCode': buzzinCode.value,
+          'showBuzzinCode': showBuzzinCode.value,
         }),
       );
     } catch (_) {
@@ -734,6 +780,9 @@ class HostController extends GetxController {
               ((decoded['hintPenalty'] as num?)?.toInt() ?? 0).clamp(0, 100).toInt();
           lockoutAfterWrong.value = decoded['lockout'] != false;
           buzzerUrl.value = (decoded['buzzerUrl'] ?? '').toString();
+          buzzinCode.value =
+              cleanBuzzinCode((decoded['buzzinCode'] ?? '').toString());
+          showBuzzinCode.value = decoded['showBuzzinCode'] == true;
           final dynamic devices = decoded['devices'];
           if (devices is Map) {
             deviceToPlayer.assignAll(
