@@ -198,6 +198,22 @@
   }
   .ring-label.hot { color: #ff9aa6; }
 
+  /* The buzzin.live room code, for players to read off the projected screen. */
+  .buzz {
+    display: flex; flex-direction: column; align-items: center; gap: .15em;
+    width: 100%; margin-top: auto; padding: .7em .5em; text-align: center;
+    border: 2px solid rgba(140, 225, 255, .8); border-radius: .35em;
+    background: linear-gradient(180deg, #062231, #02111b);
+    box-shadow: 0 0 1.2em rgba(80, 190, 255, .4), inset 0 0 1em rgba(0, 18, 36, .95);
+  }
+  .buzz-label { font-size: .95em; letter-spacing: .18em; text-transform: uppercase; color: rgba(170, 225, 255, .78); }
+  .buzz-site { font-size: 1.35em; letter-spacing: .04em; color: #d8f6ff; }
+  .buzz-code {
+    font-family: "Arial Black", Impact, sans-serif; font-size: 2.7em; line-height: 1;
+    letter-spacing: .12em; color: #9fe8ff; font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 .3em rgba(140, 235, 255, .85), 0 .04em .1em rgba(0, 0, 0, .7);
+  }
+
   /* ------------------------------ operator deck --------------------------- */
   .deck {
     position: relative; z-index: 2;
@@ -239,6 +255,7 @@
     border: 1px solid rgba(120, 200, 255, .4); border-radius: .25em; padding: .4em .45em;
   }
   input[type=number] { width: 4.6em; }
+  input.buzz-field { width: 5.4em; text-align: center; letter-spacing: .1em; }
   input:focus { outline: none; border-color: #9fe8ff; box-shadow: 0 0 0 .1em rgba(140, 225, 255, .35); }
 
   /* ---------------------------- questions drawer -------------------------- */
@@ -344,6 +361,11 @@
       <span class="ring-num" id="ringNum">60</span>
     </div>
     <div class="ring-label" id="ringLabel">Bonus</div>
+    <div class="buzz" id="buzzCard" hidden>
+      <span class="buzz-label">Buzz in at</span>
+      <strong class="buzz-site">buzzin.live</strong>
+      <span class="buzz-code" id="buzzCode"></span>
+    </div>
   </aside>
 </main>
 
@@ -373,6 +395,14 @@
     <strong class="round" id="roundNow">1st</strong>
     <button id="roundNext" class="chip" aria-label="Next round">&#9654;</button>
     <button id="lightning" class="chip" title="No bonus questions in this round">Lightning</button>
+  </div>
+  <div class="group">
+    <label for="buzzerCode">Buzz</label>
+    <input id="buzzerCode" type="text" class="field buzz-field" maxlength="12"
+           placeholder="code" aria-label="buzzin.live room code">
+    <button id="buzzerHost" class="chip">Host</button>
+    <button id="buzzerCopy" class="chip">Copy</button>
+    <button id="buzzerShow" class="chip" aria-pressed="false">Show code</button>
   </div>
   <div class="group">
     <button id="openQuestions" class="chip">Questions</button>
@@ -456,6 +486,16 @@
     if (isNaN(n)) return fallback;
     return Math.min(max, Math.max(min, n));
   }
+
+  /* buzzin.live hands out a short game code. Operators paste it from a chat or
+     copy the whole room link, so take the trailing digits rather than keeping
+     "httpsbuzzinlive" as the code. */
+  function cleanBuzzCode(value) {
+    var text = String(value || '').trim();
+    var trailing = text.match(/([0-9]{4,12})\s*$/);
+    if (trailing) return trailing[1];
+    return text.replace(/[^0-9a-z]/gi, '').slice(0, 12);
+  }
   function blankMembers() {
     var out = [];
     for (var i = 0; i < MEMBER_SLOTS; i++) out.push('');
@@ -485,6 +525,7 @@
       question: 1,
       toss: { running: false, durationMs: 30000, remainingMs: 30000, endsAt: null },
       ring: { running: false, durationMs: 60000, remainingMs: 60000, endsAt: null },
+      buzzer: { code: '', show: false },
       savedAt: 0
     };
   }
@@ -529,6 +570,10 @@
     next.question = clampInt(raw.question, 1, 4000, 1);
     next.toss = normalizeClock(raw.toss || raw.clock, 30000);
     next.ring = normalizeClock(raw.ring, 60000);
+    if (raw.buzzer && typeof raw.buzzer === 'object') {
+      next.buzzer.code = cleanBuzzCode(raw.buzzer.code);
+      next.buzzer.show = !!raw.buzzer.show;
+    }
     // Keep the stamp of the saved copy: dropping it made every poll look like a
     // new write, so an unchanged state was re-applied (and repainted) each second.
     next.savedAt = typeof raw.savedAt === 'number' ? raw.savedAt : 0;
@@ -743,6 +788,16 @@
       rank.classList.toggle('current', index + 1 === state.round);
     });
 
+    // The buzzin.live room code, shown on the projector so cadets can read it
+    // from the back of the room instead of being told it verbally.
+    var buzzCard = $('buzzCard');
+    if (buzzCard) {
+      var buzzCode = state.buzzer.code;
+      var buzzVisible = !!buzzCode && state.buzzer.show;
+      buzzCard.hidden = !buzzVisible;
+      if (buzzVisible) setText($('buzzCode'), buzzCode);
+    }
+
     if (isControl) {
       setText($('roundNow'), ORDINALS[state.round - 1]);
       var lightning = $('lightning');
@@ -753,6 +808,16 @@
         bonusValue.value = String(state.bonusPoints);
       }
       paintDeckClock();
+
+      var buzzInput = $('buzzerCode');
+      if (buzzInput && document.activeElement !== buzzInput && buzzInput.value !== state.buzzer.code) {
+        buzzInput.value = state.buzzer.code;
+      }
+      var buzzToggle = $('buzzerShow');
+      if (buzzToggle) {
+        buzzToggle.classList.toggle('on', state.buzzer.show);
+        buzzToggle.setAttribute('aria-pressed', String(state.buzzer.show));
+      }
     }
   }
 
@@ -1020,6 +1085,48 @@
       commit();
     });
 
+    var buzzInput = $('buzzerCode');
+    if (buzzInput) {
+      buzzInput.addEventListener('input', function () {
+        var cleaned = cleanBuzzCode(buzzInput.value);
+        state.buzzer.code = cleaned;
+        if (buzzInput.value !== cleaned) buzzInput.value = cleaned;
+        commit();
+      });
+    }
+
+    var buzzHost = $('buzzerHost');
+    if (buzzHost) {
+      buzzHost.addEventListener('click', function () {
+        // A named window, so clicking it twice focuses the host dashboard
+        // instead of stacking another copy on top of the projector output.
+        window.open('https://buzzin.live/host', 'brainbrawl-buzzin',
+          'width=1280,height=900,noopener');
+      });
+    }
+
+    var buzzCopy = $('buzzerCopy');
+    if (buzzCopy) {
+      buzzCopy.addEventListener('click', function () {
+        var code = state.buzzer.code;
+        if (!code) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code);
+        }
+        var label = buzzCopy.textContent;
+        buzzCopy.textContent = 'Copied';
+        window.setTimeout(function () { buzzCopy.textContent = label; }, 1200);
+      });
+    }
+
+    var buzzToggle = $('buzzerShow');
+    if (buzzToggle) {
+      buzzToggle.addEventListener('click', function () {
+        state.buzzer.show = !state.buzzer.show;
+        commit();
+      });
+    }
+
     $('resetMatch').addEventListener('click', function () {
       var keeper = state.teams.map(function (team) {
         return { name: team.name, members: team.members.slice(), score: 0 };
@@ -1030,7 +1137,8 @@
         bonusPoints: state.bonusPoints,
         question: state.question,
         toss: { durationMs: state.toss.durationMs },
-        ring: { durationMs: state.ring.durationMs }
+        ring: { durationMs: state.ring.durationMs },
+        buzzer: state.buzzer
       });
       commit();
       if (typeof renderQuestions === 'function') renderQuestions();
