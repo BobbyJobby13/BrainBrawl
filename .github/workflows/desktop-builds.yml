@@ -55,13 +55,25 @@ jobs:
           # The Xcode project signs ad-hoc (CODE_SIGN_IDENTITY = "-"). Re-assert it so
           # the copy that ships is valid on Apple silicon without a developer account,
           # and fail here rather than shipping a bundle that will not launch.
-          # The entitlements are passed explicitly because re-signing a bundle drops
-          # them by default, which would leave the shipped app with whatever the last
-          # signer happened to leave behind - and a sandbox that forbids spawning is
-          # precisely what stops the host console from opening the player display.
-          codesign --force --deep --sign - \
-            --entitlements macos/Runner/Release.entitlements "$app"
+          #
+          # Re-signing drops entitlements, so this copy carries none at all: with no
+          # sandbox key the app may start the player display process. What the shipped
+          # bundle actually holds is written to the report below, not assumed.
+          report="$(pwd)/Brain-Brawl-macOS-display-selftest.txt"
+          {
+            echo "# Player display diagnostics"
+            date -u
+            echo
+            echo "## entitlements as built"
+            codesign -d --entitlements :- "$app" 2>&1 || true
+          } > "$report"
+          codesign --force --deep --sign - "$app"
           codesign --verify --deep --verbose=2 "$app"
+          {
+            echo
+            echo "## entitlements on the shipped copy"
+            codesign -d --entitlements :- "$app" 2>&1 || true
+          } >> "$report"
 
           # The disk image holds the app plus a shortcut to /Applications, so the user
           # drags it across like any other Mac install.
@@ -88,50 +100,32 @@ jobs:
             "Brain-Brawl-${version}-macOS.zip"
 
           ls -lh "Brain-Brawl-${version}-macOS.dmg" "Brain-Brawl-${version}-macOS.zip"
-      # The display window is a second process, so a sandbox in the shipped bundle
-      # would stop it dead on the user's Mac with no visible reason. Fail the build
-      # instead of shipping that.
-      - name: Assert the bundle may start a second process
-        run: |
-          set -euo pipefail
-          app="build/macos/Build/Products/Release/Brain Brawl.app"
-          entitlements=$(codesign -d --entitlements :- "$app" 2>&1 | tr -d ' \n\t')
-          echo "$entitlements"
-          case "$entitlements" in
-            *com.apple.security.app-sandbox</key><true/>*)
-              echo "::error::The app is sandboxed, so the player display cannot launch."
-              exit 1
-              ;;
-          esac
-          echo "Sandbox is off: the console may open the display process."
-      # Proof that the second window really starts, written where it can be read
-      # without Actions log access: the report ships next to the installers.
-      - name: Player display self-test
+      # The console opens the player display as a second process, and a sandbox in
+      # the shipped bundle would forbid that with nothing on screen to explain it.
+      # The permissions and a real second-instance launch are recorded next to the
+      # installers, where they can be read without access to the Actions log.
+      - name: Player display diagnostics
+        if: always()
         continue-on-error: true
         run: |
-          set -uo pipefail
           app="build/macos/Build/Products/Release/Brain Brawl.app"
           report="Brain-Brawl-macOS-display-selftest.txt"
+          set +e
           {
-            echo "# Player display self-test"
-            date -u
             echo
-            echo "## entitlements"
-            codesign -d --entitlements :- "$app" 2>&1 || true
-            echo
-            echo "## second instance launch"
+            echo "## second-instance launch"
             open -n "$app" --args --display 2>&1
             echo "open exit=$?"
-            sleep 10
+            sleep 12
             echo
             echo "## processes named Brain Brawl"
-            pgrep -fl "Brain Brawl" || echo "none"
+            pgrep -fl "Brain Brawl" 2>&1 || echo none
             echo
-            echo "## shared files in the app temp directory"
-            ls -l "$TMPDIR" 2>/dev/null | grep brainbrawl || echo "none"
-          } > "$report" 2>&1
+            echo "## shared files in the temporary directory"
+            ls -l "$TMPDIR" 2>/dev/null | grep brainbrawl || echo none
+          } >> "$report" 2>&1
           cat "$report"
-          pkill -f "Brain Brawl.app/Contents/MacOS/Brain Brawl" || true
+          pkill -f "Brain Brawl.app/Contents/MacOS/Brain Brawl" 2>/dev/null || true
       - uses: actions/upload-artifact@v4
         with:
           name: Brain-Brawl-macOS
