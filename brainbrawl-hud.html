@@ -298,6 +298,30 @@
   .strike-dots i.on { background: var(--danger); box-shadow: 0 0 10px rgba(255, 122, 138, .55); }
   .strike-count { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--danger); }
 
+  /* questions */
+  [hidden] { display: none !important; }
+  .dropzone {
+    display: grid;
+    gap: 6px;
+    padding: 18px;
+    text-align: center;
+    border: 1px dashed rgba(255, 255, 255, .22);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .02);
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .dropzone strong { font-size: 15px; }
+  .dropzone .mono { font-size: 10px; letter-spacing: 1.4px; color: var(--faint); }
+  .dropzone.hot { border-color: var(--cyan); background: rgba(69, 229, 224, .09); }
+  .q-status { margin-top: 12px; font-size: 11px; line-height: 1.5; letter-spacing: .4px; color: var(--text2); }
+  .q-preview { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); display: grid; gap: 10px; }
+  .q-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .q-prompt { margin: 0; font-size: 17px; font-weight: 600; line-height: 1.35; }
+  .q-answer { margin: 0; font-size: 15px; color: var(--cyan); }
+  .q-bonus { margin: 0; font-size: 11px; letter-spacing: 1.2px; color: var(--gold); text-transform: uppercase; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+
   .save-bar { display: grid; gap: 10px; }
   .save-btn {
     width: 100%;
@@ -602,6 +626,50 @@
         </div>
 
         <div id="teamList"></div>
+      </section>
+
+      <!-- Questions folder -->
+      <section class="card" aria-labelledby="questionsTitle">
+        <div class="card-head">
+          <div>
+            <h2 class="card-title" id="questionsTitle">Questions</h2>
+            <p class="card-sub">Drop a .tpqx, or load the questions folder</p>
+          </div>
+          <span class="pill cyan" id="questionPill">Empty</span>
+        </div>
+
+        <div class="dropzone" id="questionDrop" role="button" tabindex="0" aria-label="Drop question files here">
+          <strong>Drop the .tpqx here</strong>
+          <span class="mono">Stays on this laptop — nothing is uploaded</span>
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <button class="btn cyan" id="pickFolder" type="button">Load questions folder</button>
+          <button class="btn" id="pickFiles" type="button">Choose files</button>
+          <span style="flex:1 1 auto"></span>
+          <button class="btn danger" id="clearQuestions" type="button">Clear</button>
+        </div>
+
+        <input id="folderInput" type="file" multiple webkitdirectory directory hidden aria-hidden="true" tabindex="-1">
+        <input id="filesInput" type="file" multiple hidden aria-hidden="true" tabindex="-1">
+
+        <div class="q-status mono" id="questionStatus">No questions loaded</div>
+
+        <div class="q-preview" id="questionPreview" hidden>
+          <div class="q-head">
+            <span class="pill gold" id="questionPack">Questions</span>
+            <span class="mono" id="questionCounter">Question 1 of 1</span>
+          </div>
+          <p class="q-prompt" id="questionPrompt"></p>
+          <p class="q-answer" id="questionAnswer" hidden></p>
+          <p class="q-bonus" id="questionBonus" hidden></p>
+          <div class="row">
+            <button class="btn" id="questionPrev" type="button">Previous</button>
+            <button class="btn cyan" id="questionNext" type="button">Next</button>
+            <span style="flex:1 1 auto"></span>
+            <button class="btn" id="questionReveal" type="button" aria-pressed="false">Show answer</button>
+          </div>
+        </div>
       </section>
 
       <!-- Save -->
@@ -917,6 +985,7 @@
     setText($('questionValue'), padded(state.question));
     setText($('activePill'), (state.teams[state.active === 'b' ? 1 : 0].name) + ' active');
     setText($('lastSaved'), formatStamp(state.updatedAt));
+    renderQuestions();
 
     Array.prototype.forEach.call(document.querySelectorAll('[data-round]'), function (button) {
       button.setAttribute('aria-pressed', String(button.dataset.round === state.round));
@@ -980,6 +1049,479 @@
     }
     setText(clock, label);
     void meter;
+  }
+
+  /* ------------------------------ questions ------------------------------ */
+
+  var QUESTION_KEY = 'brainbrawl.questions.v1';
+  var MAX_QUESTIONS = 4000;
+  var questionSet = { questions: [], files: [], loadedAt: 0 };
+  var answerShown = false;
+  var questionRenderKey = '';
+
+  function emptyQuestionSet() {
+    return { questions: [], files: [], loadedAt: 0 };
+  }
+
+  function firstString() {
+    for (var i = 0; i < arguments.length; i++) {
+      var value = arguments[i];
+      if (typeof value === 'string' && value.trim()) return value.trim();
+    }
+    return '';
+  }
+
+  function afterColon(line) {
+    var index = line.indexOf(':');
+    return index === -1 ? '' : line.slice(index + 1).trim();
+  }
+
+  function stripNumbering(line) {
+    return line.replace(/^[-*\d.)\s]+/, '').trim();
+  }
+
+  function safeJson(text) {
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function packNameFromFile(name) {
+    var base = String(name || 'Questions').split(/[\\/]/).pop();
+    base = base.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+    return base || 'Questions';
+  }
+
+  function normalizeQuestionEntry(entry, pack) {
+    if (!entry || typeof entry !== 'object') return null;
+    var prompt = firstString(entry.prompt, entry.question, entry.q, entry.text);
+    if (!prompt) return null;
+
+    var hints = [];
+    if (Array.isArray(entry.hints)) {
+      hints = entry.hints.filter(function (hint) { return typeof hint === 'string' && hint.trim(); });
+    }
+    var oneHint = firstString(entry.hint, entry.h);
+    if (oneHint) hints.push(oneHint);
+
+    return {
+      prompt: prompt,
+      answer: firstString(entry.answer, entry.a, entry.correct, entry.solution),
+      bonus: firstString(entry.bonus, entry.b, entry.bonusQuestion, entry.bonus_question),
+      hints: hints,
+      points: clampInt(entry.points || entry.p, 0, 1000, 10),
+      pack: firstString(entry.pack, entry.category, pack)
+    };
+  }
+
+  function parseQuestionJson(text, pack) {
+    var decoded = safeJson(text);
+    if (!decoded) return [];
+
+    var list = Array.isArray(decoded)
+      ? decoded
+      : (Array.isArray(decoded.questions) ? decoded.questions
+        : (Array.isArray(decoded.items) ? decoded.items : null));
+    if (!list) return [];
+
+    var packName = Array.isArray(decoded)
+      ? pack
+      : firstString(decoded.pack, decoded.name, decoded.title, pack);
+
+    var out = [];
+    list.forEach(function (entry) {
+      var question = normalizeQuestionEntry(entry, packName);
+      if (question) out.push(question);
+    });
+    return out;
+  }
+
+  function parseQuestionText(text, pack) {
+    var out = [];
+    var prompt = null;
+    var answer = null;
+    var bonus = '';
+    var points = 10;
+    var hints = [];
+    var currentPack = pack;
+
+    function flush() {
+      if (prompt && prompt.trim()) {
+        out.push({
+          prompt: prompt.trim(),
+          answer: (answer || '').trim(),
+          bonus: bonus.trim(),
+          hints: hints.slice(),
+          points: points,
+          pack: currentPack
+        });
+      }
+      prompt = null;
+      answer = null;
+      bonus = '';
+      points = 10;
+      hints = [];
+    }
+
+    String(text).replace(/^\uFEFF/, '').split(/\r?\n/).forEach(function (rawLine) {
+      var line = rawLine.trim();
+      if (!line || line.indexOf('//') === 0) return;
+
+      if (line.charAt(0) === '#') {
+        flush();
+        currentPack = line.replace(/^#+\s*/, '').trim() || pack;
+        return;
+      }
+
+      var lower = line.toLowerCase();
+      if (/^(q|question)\s*:/.test(lower)) { flush(); prompt = afterColon(line); return; }
+      if (/^(a|answer)\s*:/.test(lower)) { answer = afterColon(line); return; }
+      if (/^(b|bonus)\s*:/.test(lower)) { bonus = afterColon(line); return; }
+      if (/^(h|hint)\s*:/.test(lower)) { hints.push(afterColon(line)); return; }
+      if (/^(p|points)\s*:/.test(lower)) { points = clampInt(afterColon(line), 0, 1000, points); return; }
+      if (/^(d|difficulty)\s*:/.test(lower)) return;
+
+      if (/\?\s*$/.test(line) && (prompt === null || /^(\d+[.)]|[-*])\s/.test(line))) {
+        if (prompt !== null) flush();
+        prompt = stripNumbering(line);
+        return;
+      }
+
+      if (prompt !== null && answer === null) answer = stripNumbering(line);
+    });
+
+    flush();
+    return out;
+  }
+
+  function detectDelimiter(text) {
+    var first = String(text).split(/\r?\n/).filter(function (line) { return line.trim(); })[0] || '';
+    var tabs = (first.match(/\t/g) || []).length;
+    var commas = (first.match(/,/g) || []).length;
+    var semis = (first.match(/;/g) || []).length;
+    if (tabs && tabs >= commas && tabs >= semis) return '\t';
+    if (semis > commas) return ';';
+    return ',';
+  }
+
+  function splitDelimited(line, delimiter) {
+    var cells = [];
+    var cell = '';
+    var quoted = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line.charAt(i);
+      if (quoted) {
+        if (ch === '"' && line.charAt(i + 1) === '"') { cell += '"'; i++; }
+        else if (ch === '"') { quoted = false; }
+        else { cell += ch; }
+      } else if (ch === '"') {
+        quoted = true;
+      } else if (ch === delimiter) {
+        cells.push(cell);
+        cell = '';
+      } else {
+        cell += ch;
+      }
+    }
+    cells.push(cell);
+    return cells.map(function (value) { return value.trim(); });
+  }
+
+  function parseQuestionCsv(text, pack) {
+    var lines = String(text).replace(/\r\n/g, '\n').split('\n').filter(function (line) { return line.trim(); });
+    if (lines.length < 2) return [];
+
+    var delimiter = detectDelimiter(text);
+    var rows = lines.map(function (line) { return splitDelimited(line, delimiter); });
+    var header = rows[0].map(function (cell) { return cell.toLowerCase(); });
+    var hasHeader = header.some(function (cell) {
+      return cell.indexOf('question') === 0 || cell === 'q' || cell === 'prompt';
+    });
+
+    var qIndex = 0;
+    var aIndex = 1;
+    var bIndex = 2;
+    if (hasHeader) {
+      header.forEach(function (cell, i) {
+        if (cell.indexOf('question') === 0 || cell === 'q' || cell === 'prompt') qIndex = i;
+        if (cell.indexOf('answer') === 0 || cell === 'a') aIndex = i;
+        if (cell.indexOf('bonus') === 0 || cell === 'b') bIndex = i;
+      });
+      rows = rows.slice(1);
+    }
+
+    var out = [];
+    rows.forEach(function (row) {
+      var prompt = (row[qIndex] || '').trim();
+      if (!prompt) return;
+      out.push({
+        prompt: prompt,
+        answer: (row[aIndex] || '').trim(),
+        bonus: (row[bIndex] || '').trim(),
+        hints: [],
+        points: 10,
+        pack: pack
+      });
+    });
+    return out;
+  }
+
+  function parseAnyText(text, name) {
+    var cleaned = String(text || '').replace(/^\uFEFF/, '');
+    var pack = packNameFromFile(name);
+    var trimmed = cleaned.trim();
+    if (!trimmed) return [];
+
+    var attempts = [];
+    if (trimmed.charAt(0) === '{' || trimmed.charAt(0) === '[') attempts.push(parseQuestionJson);
+    if (/\.(csv|tsv)$/i.test(name)) attempts.push(parseQuestionCsv);
+    attempts.push(parseQuestionText);
+    if (!/\.(csv|tsv)$/i.test(name)) attempts.push(parseQuestionCsv);
+    attempts.push(parseQuestionJson);
+
+    for (var i = 0; i < attempts.length; i++) {
+      var found = attempts[i](cleaned, pack);
+      if (found && found.length) return found;
+    }
+    return [];
+  }
+
+  function binaryScore(text) {
+    if (!text || !text.length) return 0;
+    var bad = 0;
+    for (var i = 0; i < text.length; i++) {
+      var code = text.charCodeAt(i);
+      if (code === 0 || code === 0xfffd || (code < 9) || (code > 13 && code < 32)) bad++;
+    }
+    return bad / text.length;
+  }
+
+  function readFileBytes(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(new Uint8Array(reader.result)); };
+      reader.onerror = function () { reject(reader.error || new Error('could not be read')); };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  function looksLikeZip(bytes) {
+    return bytes.length > 4 && bytes[0] === 0x50 && bytes[1] === 0x4b &&
+      (bytes[2] === 0x03 || bytes[2] === 0x05 || bytes[2] === 0x07);
+  }
+
+  function looksLikeGzip(bytes) {
+    return bytes.length > 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
+  }
+
+  function streamInflate(bytes, format) {
+    if (typeof window.DecompressionStream !== 'function') {
+      return Promise.reject(new Error('this browser cannot open compressed files — unzip it first'));
+    }
+    var stream = new Blob([bytes]).stream().pipeThrough(new window.DecompressionStream(format));
+    return new Response(stream).arrayBuffer().then(function (buffer) {
+      return new Uint8Array(buffer);
+    });
+  }
+
+  async function inflateZip(bytes) {
+    var view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    var end = -1;
+    var floor = Math.max(0, bytes.length - 66000);
+    for (var i = bytes.length - 22; i >= floor; i--) {
+      if (view.getUint32(i, true) === 0x06054b50) { end = i; break; }
+    }
+    if (end < 0) throw new Error('not a readable archive');
+
+    var count = view.getUint16(end + 10, true);
+    var offset = view.getUint32(end + 16, true);
+    var entries = [];
+    var pointer = offset;
+
+    for (var n = 0; n < count && pointer + 46 <= bytes.length; n++) {
+      if (view.getUint32(pointer, true) !== 0x02014b50) break;
+
+      var method = view.getUint16(pointer + 10, true);
+      var compressedSize = view.getUint32(pointer + 20, true);
+      var nameLength = view.getUint16(pointer + 28, true);
+      var extraLength = view.getUint16(pointer + 30, true);
+      var commentLength = view.getUint16(pointer + 32, true);
+      var localOffset = view.getUint32(pointer + 42, true);
+      var name = new TextDecoder().decode(bytes.subarray(pointer + 46, pointer + 46 + nameLength));
+      pointer += 46 + nameLength + extraLength + commentLength;
+
+      if (/\/$/.test(name) || compressedSize === 0xffffffff) continue;
+      if (method !== 0 && method !== 8) continue;
+
+      var localNameLength = view.getUint16(localOffset + 26, true);
+      var localExtraLength = view.getUint16(localOffset + 28, true);
+      var dataStart = localOffset + 30 + localNameLength + localExtraLength;
+      var raw = bytes.subarray(dataStart, dataStart + compressedSize);
+      var inflated = method === 8 ? await streamInflate(raw, 'deflate-raw') : raw;
+      entries.push({ name: name, text: new TextDecoder('utf-8').decode(inflated) });
+    }
+
+    return entries;
+  }
+
+  function expandContainer(bytes, name) {
+    if (looksLikeZip(bytes)) return inflateZip(bytes);
+    if (looksLikeGzip(bytes)) {
+      return streamInflate(bytes, 'gzip').then(function (inflated) {
+        return [{ name: name.replace(/\.gz$/i, ''), text: new TextDecoder('utf-8').decode(inflated) }];
+      });
+    }
+    return Promise.resolve(null);
+  }
+
+  async function collectFromFiles(files) {
+    var questions = [];
+    var report = [];
+
+    for (var i = 0; i < files.length; i++) {
+      var file = files[i];
+      if (/\.(png|jpe?g|gif|ico|db|ini)$/i.test(file.name) || file.name.charAt(0) === '.') continue;
+
+      try {
+        var bytes = await readFileBytes(file);
+        var entries = await expandContainer(bytes, file.name);
+        var found = [];
+
+        if (entries) {
+          entries.forEach(function (entry) {
+            if (binaryScore(entry.text) > 0.02) return;
+            found = found.concat(parseAnyText(entry.text, entry.name));
+          });
+        } else {
+          var text = new TextDecoder('utf-8').decode(bytes);
+          if (binaryScore(text) <= 0.02) found = parseAnyText(text, file.name);
+        }
+
+        questions = questions.concat(found);
+        report.push({ name: file.name, count: found.length, error: '' });
+      } catch (err) {
+        report.push({ name: file.name, count: 0, error: (err && err.message) || 'unreadable' });
+      }
+    }
+
+    return { questions: questions, report: report };
+  }
+
+  function saveQuestionSet() {
+    try {
+      window.localStorage.setItem(QUESTION_KEY, JSON.stringify(questionSet));
+    } catch (err) {
+      setText($('questionStatus'), questionSet.questions.length +
+        ' questions loaded for this session only — too big to remember on this laptop.');
+    }
+  }
+
+  function loadQuestionSet() {
+    try {
+      var raw = window.localStorage.getItem(QUESTION_KEY);
+      if (raw) {
+        var stored = JSON.parse(raw);
+        if (stored && Array.isArray(stored.questions)) {
+          questionSet = {
+            questions: stored.questions,
+            files: stored.files || [],
+            loadedAt: stored.loadedAt || 0
+          };
+        }
+      }
+    } catch (err) {
+      questionSet = emptyQuestionSet();
+    }
+
+    if (questionSet.questions.length) {
+      var total = questionSet.questions.length;
+      var files = questionSet.files.length || 1;
+      setText($('questionPill'), total + ' ready');
+      setText($('questionStatus'), total + ' questions from ' + files + ' file' +
+        (files === 1 ? '' : 's') + ' · loaded earlier');
+    }
+  }
+
+  function applyQuestionSet(questions, report) {
+    questionSet = {
+      questions: questions.slice(0, MAX_QUESTIONS),
+      files: (report || []).filter(function (entry) { return entry.count > 0; }),
+      loadedAt: Date.now()
+    };
+    saveQuestionSet();
+
+    var total = questionSet.questions.length;
+    var parts = [total
+      ? total + ' question' + (total === 1 ? '' : 's') + ' from ' + questionSet.files.length + ' file' +
+        (questionSet.files.length === 1 ? '' : 's')
+      : 'No questions found in those files'];
+
+    (report || []).forEach(function (entry) {
+      if (!entry.count) parts.push(entry.name + ' — ' + (entry.error || 'nothing readable'));
+    });
+
+    setText($('questionStatus'), parts.join(' · '));
+    setText($('questionPill'), total ? total + ' ready' : 'Empty');
+    answerShown = false;
+    questionRenderKey = '';
+
+    if (total && state.question > total) {
+      state.question = 1;
+      commit();
+    }
+    renderQuestions();
+  }
+
+  function loadQuestionFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList || []);
+    if (!files.length) return;
+
+    setText($('questionStatus'), 'Reading ' + files.length + ' file' + (files.length === 1 ? '' : 's') + '…');
+    collectFromFiles(files).then(function (result) {
+      applyQuestionSet(result.questions, result.report);
+    }).catch(function (err) {
+      setText($('questionStatus'), 'Could not read those files: ' + ((err && err.message) || 'unknown error'));
+    });
+  }
+
+  function renderQuestions() {
+    if (!isControl) return;
+    var preview = $('questionPreview');
+    if (!preview) return;
+
+    var total = questionSet.questions.length;
+    if (!total) {
+      preview.hidden = true;
+      questionRenderKey = '';
+      return;
+    }
+
+    var index = Math.min(total - 1, Math.max(0, state.question - 1));
+    var key = index + '|' + total + '|' + (answerShown ? 1 : 0);
+    if (key === questionRenderKey && !preview.hidden) return;
+    questionRenderKey = key;
+
+    var question = questionSet.questions[index];
+    preview.hidden = false;
+    setText($('questionCounter'), 'Question ' + (index + 1) + ' of ' + total);
+    setText($('questionPack'), question.pack || 'Questions');
+    setText($('questionPrompt'), question.prompt);
+
+    var answer = $('questionAnswer');
+    answer.hidden = !answerShown;
+    setText(answer, question.answer ? 'Answer: ' + question.answer : 'No answer saved for this question');
+
+    var bonus = $('questionBonus');
+    bonus.hidden = !question.bonus;
+    setText(bonus, question.bonus ? 'BONUS · ' + question.bonus : '');
+
+    var reveal = $('questionReveal');
+    reveal.textContent = answerShown ? 'Hide answer' : 'Show answer';
+    reveal.setAttribute('aria-pressed', String(answerShown));
+    $('questionPrev').disabled = index <= 0;
+    $('questionNext').disabled = index >= total - 1;
   }
 
   /* ------------------------------ writing ------------------------------ */
@@ -1070,6 +1612,76 @@
     $('strikeAll').addEventListener('click', function () {
       state.teams.forEach(function (team) { team.strikes = 0; });
       commit();
+    });
+
+    $('pickFolder').addEventListener('click', function () { $('folderInput').click(); });
+    $('pickFiles').addEventListener('click', function () { $('filesInput').click(); });
+
+    $('folderInput').addEventListener('change', function (event) {
+      if (event.target.files && event.target.files.length) loadQuestionFiles(event.target.files);
+      event.target.value = '';
+    });
+    $('filesInput').addEventListener('change', function (event) {
+      if (event.target.files && event.target.files.length) loadQuestionFiles(event.target.files);
+      event.target.value = '';
+    });
+
+    var drop = $('questionDrop');
+    ['dragenter', 'dragover'].forEach(function (name) {
+      drop.addEventListener(name, function (event) {
+        event.preventDefault();
+        drop.classList.add('hot');
+      });
+    });
+    ['dragleave', 'dragend', 'drop'].forEach(function (name) {
+      drop.addEventListener(name, function (event) {
+        event.preventDefault();
+        drop.classList.remove('hot');
+      });
+    });
+    drop.addEventListener('drop', function (event) {
+      var files = event.dataTransfer && event.dataTransfer.files;
+      if (files && files.length) loadQuestionFiles(files);
+    });
+    drop.addEventListener('click', function () { $('folderInput').click(); });
+    drop.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        $('folderInput').click();
+      }
+    });
+
+    $('questionPrev').addEventListener('click', function () {
+      state.question = Math.max(1, state.question - 1);
+      answerShown = false;
+      questionRenderKey = '';
+      commit();
+    });
+    $('questionNext').addEventListener('click', function () {
+      var last = Math.max(1, questionSet.questions.length);
+      state.question = Math.min(last, state.question + 1);
+      answerShown = false;
+      questionRenderKey = '';
+      commit();
+    });
+    $('questionReveal').addEventListener('click', function () {
+      answerShown = !answerShown;
+      renderQuestions();
+    });
+    $('clearQuestions').addEventListener('click', function () {
+      if (!questionSet.questions.length) return;
+      if (!window.confirm('Remove the ' + questionSet.questions.length + ' loaded questions from this laptop?')) return;
+      questionSet = emptyQuestionSet();
+      try {
+        window.localStorage.removeItem(QUESTION_KEY);
+      } catch (err) {
+        /* nothing saved to remove */
+      }
+      answerShown = false;
+      questionRenderKey = '';
+      setText($('questionPill'), 'Empty');
+      setText($('questionStatus'), 'No questions loaded');
+      renderQuestions();
     });
 
     $('saveAll').addEventListener('click', function () { commit(true); });
@@ -1169,6 +1781,7 @@
   }, STATE_POLL_MS);
 
   if (isControl) {
+    loadQuestionSet();
     $('customSeconds').value = String(state.timer.durationMs / 1000);
     renderControl();
   } else {
