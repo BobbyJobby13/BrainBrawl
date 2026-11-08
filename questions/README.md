@@ -17,11 +17,19 @@ do not need to pick the folder again — only when you add or change files.
 You can also drag a single file (or the whole folder) onto the dashed box in that card,
 or use **Choose files** to pick a few at once.
 
+## Reading the bank
+
+Once the files load, the card lists the whole set: each question on the left with
+its answer beside it. **Search questions or answers** narrows the list,
+**Answers on / off** hides the answers for a quick quiz, and **Print bank** prints
+(or saves as PDF) a numbered sheet with the answers in their own column. Click any
+row to put that question on the projector.
+
 ## What it understands
 
 | File | Notes |
 | --- | --- |
-| `.tpqx` | Tried as a zip or gzip container first; every text file inside is parsed. If your `.tpqx` is not one of those, see below. |
+| `.tpqx` | Opened as a zip or gzip first, then read as UTF-8 or UTF-16 text and as markup — question lists store their questions and answers in XML/HTML inside the file. If a file still comes back empty, see below. |
 | `.json` | A list of questions, or `{ "questions": [...] }`. Keys: `q`/`question`/`prompt`, `a`/`answer`, `b`/`bonus`, `h`/`hint`, `p`/`points`, `d`/`difficulty`. |
 | `.txt`, `.md` | The `Q:` / `A:` / `B:` sheet format below, or a numbered study guide. |
 | `.csv`, `.tsv` | Columns `question,answer,bonus` (a header row is optional). |
@@ -57,8 +65,11 @@ Naval Junior Reserve Officers' Training Corps
 
 ## If nothing loads from the .tpqx
 
-That file is not a zip, gzip, JSON or text file this page can read — some quiz
-programs use their own binary format. Two ways round it:
+The console opens it as a zip/gzip archive, then reads it as UTF-8 or UTF-16 text,
+then as markup, and finally pulls the readable text out of the container. The status
+line names the file and says what it looked like, so you can tell which one failed.
+If it still finds nothing, the quiz program is using its own binary format. Two ways
+round it:
 
 - Open the `.tpqx` in **7-Zip** (or rename it to `.zip` and double-click). If the
   archive opens, extract the files into this folder and load the folder again.
