@@ -74,6 +74,8 @@ jobs:
   windows:
     name: Windows installer + portable (x64)
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -100,7 +102,26 @@ jobs:
           reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" `
             /t REG_DWORD /f /v AllowDevelopmentWithoutDevLicense /d 1
       - run: flutter pub get
-      - run: flutter build windows --release
+      - name: Build the Windows app
+        shell: pwsh
+        run: |
+          flutter build windows --release 2>&1 | Tee-Object -FilePath windows-build.log
+          exit $LASTEXITCODE
+      # A failing Windows build leaves no readable trace for anyone without
+      # access to the Actions API, so the log is pushed to a throwaway branch
+      # where it can be fetched anonymously while the build is being fixed.
+      - name: Publish the Windows build log
+        if: always()
+        shell: pwsh
+        run: |
+          if (-not (Test-Path windows-build.log)) { "no log captured" | Out-File windows-build.log }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B ci-logs
+          git add -f windows-build.log
+          git commit -m "Windows build log"
+          if ($LASTEXITCODE -ne 0) { exit 0 }
+          git push -f origin ci-logs
       - name: Install WiX Toolset
         run: choco install wixtoolset --no-progress -y
       - name: Build the MSI
