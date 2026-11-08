@@ -13,7 +13,7 @@
   html, body { height: 100%; margin: 0; overflow: hidden; }
   body {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: radial-gradient(120% 90% at 50% -10%, #0b2f5c 0%, #061834 40%, #02080f 100%);
+    background: radial-gradient(95% 75% at 50% 6%, #2f83c9 0%, #1a5f9f 26%, #0e4278 50%, #072a4c 74%, #03121f 100%);
     color: #e8f6ff;
     font-family: "Arial Narrow", "Roboto Condensed", "Segoe UI", Arial, sans-serif;
     overflow: hidden;
@@ -23,10 +23,11 @@
   body::before {
     content: ""; position: fixed; inset: 0; pointer-events: none;
     background:
-      repeating-linear-gradient(90deg, transparent 0 5.2em, rgba(96,186,255,.09) 5.2em 5.9em),
-      repeating-linear-gradient(90deg, transparent 0 17em, rgba(150,225,255,.17) 17em 17.5em, transparent 17.5em 31em),
-      repeating-linear-gradient(90deg, transparent 0 43em, rgba(90,175,255,.22) 43em 43.8em, transparent 43.8em 67em);
-    mask-image: radial-gradient(80% 70% at 50% 40%, #000 40%, transparent 100%);
+      repeating-linear-gradient(90deg, transparent 0 2.6em, rgba(120,205,255,.10) 2.6em 3.0em, transparent 3.0em 4.4em),
+      repeating-linear-gradient(90deg, transparent 0 7.5em, rgba(150,225,255,.16) 7.5em 8.0em, transparent 8.0em 11em),
+      repeating-linear-gradient(90deg, transparent 0 17em, rgba(190,240,255,.22) 17em 17.5em, transparent 17.5em 26em),
+      repeating-linear-gradient(90deg, transparent 0 43em, rgba(110,195,255,.26) 43em 43.9em, transparent 43.9em 61em);
+    mask-image: radial-gradient(88% 80% at 50% 45%, #000 55%, transparent 100%);
   }
   body::after {
     content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .55;
@@ -44,29 +45,35 @@
   .stage {
     position: relative; z-index: 1;
     display: grid;
-    grid-template-columns: 7em repeat(4, 1fr) 22em;
+    grid-template-columns: 10em repeat(4, 1fr) 23em;
     grid-template-rows: 11em 34em minmax(0, 1fr);
-    gap: 1.3em;
+    gap: 1.1em;
     width: 160em; height: 90em;
     padding: 1.5em 2em 1em;
     overflow: hidden;
   }
 
   /* ------------------------------ team cards ------------------------------ */
+  /* A glowing rail sits behind the row, as in the photographed board. */
+  .stage::before {
+    content: ""; position: absolute; z-index: 0; left: 3em; right: 25em; top: 5.4em; height: .22em;
+    background: linear-gradient(90deg, transparent, rgba(160,235,255,.9) 12%, rgba(160,235,255,.9) 88%, transparent);
+    filter: blur(.12em); pointer-events: none;
+  }
   .team {
-    grid-row: 1;
+    grid-row: 1; position: relative; z-index: 1;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: .2em; padding: .5em .7em .6em;
-    border: 2px solid rgba(134, 214, 255, .72); border-radius: .55em;
-    background: linear-gradient(180deg, rgba(12, 44, 80, .92), rgba(3, 13, 28, .96));
-    box-shadow: 0 0 1.1em rgba(60, 165, 255, .35), inset 0 0 1.6em rgba(60, 150, 255, .16);
-    transition: box-shadow .2s, border-color .2s, transform .2s;
+    gap: .05em; padding: .45em .7em .55em;
+    border: .16em solid rgba(116, 212, 252, .95); border-radius: .45em;
+    background: linear-gradient(180deg, rgba(4, 14, 26, .97), rgba(1, 6, 12, .99));
+    box-shadow: 0 0 .9em rgba(90, 205, 255, .55), 0 0 .2em rgba(150, 235, 255, .45),
+                inset 0 0 0 .1em rgba(120, 215, 255, .35), inset 0 0 1.1em rgba(30, 120, 200, .35);
+    transition: box-shadow .2s, border-color .2s;
   }
   .team.active {
-    border-color: #8dffc9;
-    box-shadow: 0 0 1.6em rgba(120, 255, 200, .55), 0 0 3em rgba(80, 220, 255, .30),
-                inset 0 0 1.8em rgba(120, 255, 210, .18);
-    transform: translateY(-.15em);
+    border-color: #baff4a;
+    box-shadow: 0 0 1.4em rgba(184, 255, 74, .85), 0 0 .35em #baff4a,
+                inset 0 0 0 .1em rgba(200, 255, 130, .5), inset 0 0 1.2em rgba(150, 255, 90, .22);
   }
   .team .name {
     width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -94,11 +101,10 @@
   .member {
     position: relative; display: flex; align-items: center; justify-content: center;
     flex: 0 0 5.2em; min-height: 2.4em; padding: .35em .8em;
-    border: 1px solid rgba(196, 240, 255, .9); border-radius: .3em;
-    background: linear-gradient(180deg, rgba(198, 238, 255, .95) 0%, rgba(126, 190, 232, .95) 45%, rgba(74, 143, 197, .95) 100%);
-    box-shadow: 0 0 .75em rgba(80, 180, 255, .38), inset 0 .14em .28em rgba(255, 255, 255, .85),
-                inset 0 -.22em .45em rgba(8, 54, 96, .35);
-    clip-path: polygon(2.5% 0, 100% 0, 97.5% 100%, 0 100%);
+    border: .1em solid rgba(214, 244, 255, .95); border-radius: .38em;
+    background: linear-gradient(180deg, #eaf7ff 0%, #c2e2f6 16%, #9bcbea 52%, #74b0d8 100%);
+    box-shadow: 0 .14em .34em rgba(0, 16, 34, .5), 0 0 .8em rgba(90, 195, 255, .5),
+                inset 0 .16em .2em rgba(255, 255, 255, .95), inset 0 -.28em .45em rgba(18, 74, 124, .4);
   }
   .member .label {
     font-weight: 700; font-size: 1.3em; line-height: 1.1; letter-spacing: .045em;
@@ -121,13 +127,14 @@
   }
   .rank {
     position: relative; padding-left: 1.5em;
-    font-size: 2.1em; font-weight: 700; letter-spacing: .05em; color: rgba(160, 220, 255, .6);
+    font-size: 2.1em; font-weight: 700; letter-spacing: .05em; color: rgba(176, 226, 255, .85);
+    text-shadow: 0 0 .4em rgba(40, 120, 200, .8);
   }
   .rank::before {
-    content: "\00BB"; position: absolute; left: 0; color: rgba(150, 212, 255, .22);
+    content: "\00BB"; position: absolute; left: 0; color: rgba(170, 225, 255, .5);
   }
   .rank.current {
-    color: #ccf7ff; text-shadow: 0 0 .7em rgba(120, 230, 255, .95);
+    color: #ffffff; text-shadow: 0 0 .6em rgba(160, 235, 255, .95);
   }
   .rank.current::before { color: #9df3ff; text-shadow: 0 0 .6em rgba(120, 235, 255, .95); }
   button.rank { background: none; border: 0; text-align: left; cursor: pointer; font-family: inherit; }
@@ -147,9 +154,9 @@
   }
   .wordmark span {
     font-size: 2.5em;
-    background: linear-gradient(180deg, #f6e6bd 0%, #d7b273 45%, #9a7433 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #dcecfb 40%, #8fb6d4 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
-    filter: drop-shadow(0 .05em .1em rgba(0, 0, 0, .75));
+    filter: drop-shadow(0 0 .18em rgba(80, 190, 255, .85)) drop-shadow(0 .04em .06em rgba(0, 10, 25, .9));
   }
   .lcd {
     position: relative; width: 100%; padding: .5em .7em;
@@ -162,6 +169,7 @@
     background: repeating-linear-gradient(180deg, rgba(130, 220, 255, .055) 0 .16em, transparent .16em .32em);
   }
   .lcd svg { display: block; width: 100%; height: auto; }
+  body[data-view="display"] .ring-label { display: none; }
   .lcd .seg.on { fill: #9fe8ff; filter: drop-shadow(0 0 .16em rgba(140, 235, 255, .95)); }
   .lcd .seg.off { fill: rgba(120, 200, 255, .07); }
   .lcd.critical .seg.on { fill: #ff6677; filter: drop-shadow(0 0 .2em rgba(255, 80, 100, .95)); }
@@ -170,11 +178,12 @@
   .ring .tick { fill: #2e8dc4; }
   .ring .tick.spent { fill: rgba(150, 45, 65, .5); }
   .ring .tick.hot { fill: #ff3d54; }
-  .ring .rim { fill: none; stroke: rgba(140, 220, 255, .35); stroke-width: 1.5; }
-  .ring .face { fill: rgba(4, 18, 34, .92); }
+  .ring .rim { fill: none; stroke: rgba(120, 215, 255, .8); stroke-width: 2; }
+  .ring .face { fill: #071726; }
+  .ring .outer { fill: none; stroke: rgba(110, 200, 250, .35); stroke-width: 1; }
   .ring-num {
     position: absolute; font-family: "Arial Black", Impact, sans-serif;
-    font-size: 4.6em; line-height: 1; color: #eaf9ff;
+    font-size: 6em; line-height: 1; color: #eefaff;
     text-shadow: 0 0 .3em rgba(140, 235, 255, .9), 0 .04em .1em rgba(0, 0, 0, .7);
     font-variant-numeric: tabular-nums;
   }
@@ -287,17 +296,23 @@
             <stop offset="0" stop-color="#ffffff"/>
             <stop offset="1" stop-color="#68798a"/>
           </linearGradient>
+          <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset=".55" stop-color="#e2edf8"/>
+            <stop offset="1" stop-color="#9db2c6"/>
+          </linearGradient>
         </defs>
         <path d="M60 4 L112 22 V66 C112 100 88 124 60 140 C32 124 8 100 8 66 V22 Z"
-              fill="url(#steel)" stroke="url(#steelEdge)" stroke-width="3"/>
-        <path d="M60 14 L102 28 V66 C102 95 82 116 60 130 C38 116 18 95 18 66 V28 Z"
-              fill="none" stroke="#7b8b9a" stroke-width="1.4" opacity=".75"/>
-        <g fill="#1d2f3d">
-          <path d="M60 34c12 0 20 9 20 20 0 7-3 11-8 15l-2 8H50l-2-8c-5-4-8-8-8-15 0-11 8-20 20-20Z"/>
-          <path d="M79 49l15 7-15 4z"/>
-          <path d="M24 90c15-9 26-4 36 2 10-6 21-11 36-2-13 2-21 9-29 17-6 6-13 6-19 0-8-8-16-15-24-17Z"/>
-          <path d="M60 104l4 8h-8z"/>
+              fill="#08192b" stroke="url(#steelEdge)" stroke-width="3.5"/>
+        <path d="M60 13 L103 28 V66 C103 96 82 118 60 131 C38 118 17 96 17 66 V28 Z"
+              fill="none" stroke="#c3d6e6" stroke-width="1.2" opacity=".8"/>
+        <g fill="url(#silver)">
+          <path d="M52 24c11-3 21 3 26 12 2 4 2 8 1 11l-6 7-17-3c-7-3-11-9-11-15 0-5 3-10 7-12Z"/>
+          <path d="M74 37l24 10-22 9c-3-2-5-6-5-10 0-4 1-7 3-9Z"/>
+          <path d="M40 60l16 5 17-2-7 11-20 2c-4-2-6-7-6-16Z"/>
+          <path d="M27 99c13-10 27-10 36-2 9-8 23-8 36 2-13 1-24 8-30 17-4 6-8 6-12 0-6-9-17-16-30-17Z"/>
         </g>
+        <circle cx="63" cy="41" r="3" fill="#08192b"/>
       </svg>
       <div class="wordmark"><span>BRAIN</span><span>BRAWL</span></div>
     </div>
@@ -777,7 +792,7 @@
     }
   }
 
-  var TICKS = 48;
+  var TICKS = 60;
   var tickEls = [];
 
   function buildRing() {
@@ -789,13 +804,20 @@
     face.setAttribute('class', 'face');
     svg.appendChild(face);
 
+    var outer = document.createElementNS(NS, 'circle');
+    outer.setAttribute('cx', 110);
+    outer.setAttribute('cy', 110);
+    outer.setAttribute('r', 106);
+    outer.setAttribute('class', 'outer');
+    svg.appendChild(outer);
+
     for (var i = 0; i < TICKS; i++) {
       var tick = document.createElementNS(NS, 'rect');
-      tick.setAttribute('x', 106);
-      tick.setAttribute('y', 12);
-      tick.setAttribute('width', 8);
-      tick.setAttribute('height', 22);
-      tick.setAttribute('rx', 2.5);
+      tick.setAttribute('x', 107.2);
+      tick.setAttribute('y', 6);
+      tick.setAttribute('width', 5.6);
+      tick.setAttribute('height', 19);
+      tick.setAttribute('rx', 2.2);
       tick.setAttribute('transform', 'rotate(' + (360 / TICKS) * i + ' 110 110)');
       tick.setAttribute('class', 'tick');
       svg.appendChild(tick);
