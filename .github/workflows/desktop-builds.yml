@@ -90,6 +90,15 @@ jobs:
           if (-not $version) { throw 'Could not read a x.y.z version from pubspec.yaml' }
           "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
       - run: flutter config --enable-windows-desktop
+      # Flutter links Windows plugins into the build through symlinks, and
+      # Windows only permits those with Developer Mode on. The runner has it
+      # off, which fails the build with "requires symlink support" before any
+      # code is compiled.
+      - name: Enable Developer Mode for plugin symlinks
+        shell: pwsh
+        run: |
+          reg add "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" `
+            /t REG_DWORD /f /v AllowDevelopmentWithoutDevLicense /d 1
       - run: flutter pub get
       - run: flutter build windows --release
       - name: Install WiX Toolset
