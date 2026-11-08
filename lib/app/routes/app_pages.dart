@@ -8,6 +8,7 @@ import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/dashboard/views/dashboard_view.dart';
 import '../modules/host/bindings/host_binding.dart';
 import '../modules/host/views/host_console_view.dart';
+import '../modules/host/views/player_display_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/leaderboard/bindings/leaderboard_binding.dart';
@@ -88,6 +89,12 @@ class AppPages {
         name: _Paths.HOST,
         page: () => const HostConsoleView(),
         binding: HostBinding()
+    ),
+    // Player board for the projector, shown by a second copy of the app that
+    // is started with `--display` from the host console.
+    GetPage(
+        name: _Paths.DISPLAY,
+        page: () => const PlayerDisplayView()
     ),
   ];
 }

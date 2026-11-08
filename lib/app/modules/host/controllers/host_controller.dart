@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../platform/live_link.dart';
 import '../../../../platform/url_opener.dart';
 import '../models/game_models.dart';
 import '../models/quiz_question.dart';
@@ -76,6 +77,10 @@ class HostController extends GetxController {
   Timer? _ticker;
   Timer? _matchTicker;
 
+  /// Publishes the board to the player display window; see [liveState].
+  final LiveLink _live = LiveLink();
+  Timer? _liveTimer;
+
   /// Wiring lives in the constructor so the buzz queue works even when the
   /// controller is exercised outside a GetX route (tests, previews).
   HostController() {
@@ -102,6 +107,7 @@ class HostController extends GetxController {
   void onClose() {
     _ticker?.cancel();
     _matchTicker?.cancel();
+    _liveTimer?.cancel();
     buzzers.dispose();
     super.onClose();
   }
@@ -118,6 +124,7 @@ class HostController extends GetxController {
       // The console must open even if a pack or the saved state is unreadable.
     } finally {
       ready.value = true;
+      _startLivePublishing();
     }
   }
 
@@ -701,6 +708,70 @@ class HostController extends GetxController {
   Future<void> openBuzzinHost() => openExternalUrl('https://buzzin.live/host');
 
   bool get buzzinReady => buzzinCode.value.isNotEmpty;
+
+  // ---------------------------------------------------------------------------
+  // Player display
+  // ---------------------------------------------------------------------------
+
+  bool get canOpenPlayerDisplay => _live.canOpenDisplay;
+
+  /// Starts a second copy of the app in `--display` mode, for the projector.
+  /// Returns an error message, or null when the window launched.
+  Future<String?> openPlayerDisplay() => _live.openDisplay();
+
+  /// Four times a second is enough for the countdown and the scores, and the
+  /// link skips the write whenever nothing changed.
+  void _startLivePublishing() {
+    _liveTimer?.cancel();
+    _liveTimer = Timer.periodic(
+      const Duration(milliseconds: 250),
+      (Timer _) => _live.publish(liveState()),
+    );
+  }
+
+  /// Everything the projector needs, in one flat map. The display renders this
+  /// and never writes anything back, so a stray click on the board cannot
+  /// change a score.
+  Map<String, dynamic> liveState() {
+    final QuizQuestion? question = current.value;
+    final Team? bonus = bonusTeam;
+    final Player? buzzed = activePlayer;
+    return <String, dynamic>{
+      'at': DateTime.now().millisecondsSinceEpoch,
+      'index': deckIndex.value,
+      'total': deck.length,
+      'prompt': question?.prompt ?? '',
+      'answer': answerRevealed.value ? (question?.answer ?? '') : '',
+      'pack': question?.pack ?? '',
+      'points': question?.points ?? correctPoints.value,
+      'choices': question?.choices ?? const <String>[],
+      'hints': (question?.hints ?? const <String>[])
+          .take(hintsShown.value)
+          .toList(),
+      'seconds': questionSeconds.value,
+      'remaining': remaining.value,
+      'running': timerRunning.value,
+      'expired': timeExpired.value,
+      'lightning': lightningRound.value,
+      'matchRemaining': matchRemaining.value,
+      'bonus': bonus?.name ?? '',
+      'buzz': buzzed?.name ?? '',
+      'buzzin': showBuzzinCode.value ? buzzinCode.value : '',
+      'teams': teams
+          .map((Team team) => <String, dynamic>{
+                'name': team.name,
+                'score': team.score,
+                'accent': team.colorIndex,
+                'players': team.players
+                    .map((Player player) => <String, dynamic>{
+                          'name': player.name,
+                          'score': player.score,
+                        })
+                    .toList(),
+              })
+          .toList(),
+    };
+  }
 
   /// Keys 1-9 follow roster order so a keyboard (or a USB buzzer box that types
   /// digits) works with no setup at all.

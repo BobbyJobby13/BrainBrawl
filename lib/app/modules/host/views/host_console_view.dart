@@ -178,6 +178,23 @@ class _ConsoleHeader extends StatelessWidget {
             const SizedBox(width: 10),
           ],
           MiniAction(
+            label: wide ? 'Player display' : 'Display',
+            icon: Icons.cast_rounded,
+            filled: true,
+            color: Palette.cyan,
+            onTap: controller.canOpenPlayerDisplay
+                ? () async {
+                    final String? error = await controller.openPlayerDisplay();
+                    if (error != null && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(error)),
+                      );
+                    }
+                  }
+                : null,
+          ),
+          const SizedBox(width: 8),
+          MiniAction(
             label: 'Exit',
             icon: Icons.close_rounded,
             onTap: () => Get.offAllNamed(Routes.HOME),
