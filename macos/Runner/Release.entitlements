@@ -2,8 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Off on purpose: the host console starts the projector window by opening
+	     a second copy of the app, and the sandbox forbids spawning any process.
+	     This build is distributed unsigned, outside the App Store, so the
+	     sandbox is not required. -->
 	<key>com.apple.security.app-sandbox</key>
-	<true/>
+	<false/>
 	<!-- Required: the app talks to the competition API and to buzzer receivers. -->
 	<key>com.apple.security.network.client</key>
 	<true/>
