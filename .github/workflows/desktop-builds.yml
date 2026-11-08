@@ -68,12 +68,27 @@ jobs:
 
           hdiutil create -volname "Brain Brawl" \
             -srcfolder "$staging" \
+            -fs HFS+ \
             -ov -format UDZO \
             "Brain-Brawl-${version}-macOS.dmg"
+
+          # Mount the image here, on the machine that made it. A disk image that
+          # cannot be read only shows up on the user's Mac as "not readable by
+          # this computer", which points at nothing and costs a round trip.
+          hdiutil verify "Brain-Brawl-${version}-macOS.dmg"
+
+          # The same bundle also ships as a zip, so an install never depends on
+          # the disk image mounting: unzip, then drag the app to Applications.
+          ditto -c -k --sequesterRsrc --keepParent "$app" \
+            "Brain-Brawl-${version}-macOS.zip"
+
+          ls -lh "Brain-Brawl-${version}-macOS.dmg" "Brain-Brawl-${version}-macOS.zip"
       - uses: actions/upload-artifact@v4
         with:
           name: Brain-Brawl-macOS
-          path: Brain-Brawl-*-macOS.dmg
+          path: |
+            Brain-Brawl-*-macOS.dmg
+            Brain-Brawl-*-macOS.zip
           if-no-files-found: error
 
   windows:
