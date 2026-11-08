@@ -1,9 +1,9 @@
 name: brainbrawl
-version: 1.0.0+1
+version: 1.1.0+2
 publish_to: none
 description: A new Flutter project.
 environment: 
-  sdk: '>=2.19.6 <3.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies: 
   cupertino_icons: ^1.0.2
@@ -43,4 +43,5 @@ flutter:
     - assets/participants/
     - assets/images/
     - assets/json/
+    - assets/questions/
 

@@ -1,111 +1,56 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter/services.dart';
-//
-// ThemeData getBlackWhiteTheme() {
-//   final ThemeData base = ThemeData.dark();
-//
-//   return base.copyWith(
-//     primaryColor: const Color.fromARGB(255,8, 32, 50),
-//     primaryColorLight: Colors.white,
-//     scaffoldBackgroundColor: const Color.fromARGB(255, 8, 32, 50),
-//     appBarTheme: const AppBarTheme(
-//       color: Color.fromARGB(255, 10, 22, 44),
-//       elevation: 0, systemOverlayStyle: SystemUiOverlayStyle.light,
-//     ),
-//     textTheme: const TextTheme(
-//       displayLarge: TextStyle(
-//         color: Colors.white,
-//         fontSize: 24,
-//         fontWeight: FontWeight.bold,
-//       ),
-//       bodyLarge: TextStyle(
-//         color: Colors.white,
-//         fontSize: 16,
-//       ),
-//     ),
-//     buttonTheme: ButtonThemeData(
-//       buttonColor: Colors.white,
-//       textTheme: ButtonTextTheme.primary,
-//       shape: RoundedRectangleBorder(
-//         borderRadius: BorderRadius.circular(8),
-//       ),
-//     ),
-//     inputDecorationTheme: InputDecorationTheme(
-//       fillColor: Colors.white,
-//       filled: true,
-//       enabledBorder: OutlineInputBorder(
-//         borderSide: const BorderSide(
-//           color: Colors.white,
-//           width: 2,
-//         ),
-//         borderRadius: BorderRadius.circular(8),
-//       ),
-//       focusedBorder: OutlineInputBorder(
-//         borderSide: const BorderSide(
-//           color: Colors.white,
-//           width: 2,
-//         ),
-//         borderRadius: BorderRadius.circular(8),
-//       ),
-//       labelStyle: const TextStyle(
-//         color: Colors.white,
-//       ),
-//     ), colorScheme: ColorScheme.fromSwatch().copyWith(secondary: Colors.white),
-//   );
-// }
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import 'palette.dart';
 
 ThemeData getBlackWhiteTheme() {
   final ThemeData base = ThemeData.dark();
+  final TextTheme textTheme = GoogleFonts.spaceGroteskTextTheme(base.textTheme)
+      .apply(
+        bodyColor: Palette.textPrimary,
+        displayColor: Palette.textPrimary,
+      );
 
   return base.copyWith(
-    primaryColor: const Color.fromARGB(255, 15, 9, 19),
+    primaryColor: Palette.background,
     primaryColorLight: Colors.white,
-    scaffoldBackgroundColor: const Color.fromARGB(255, 15, 9, 19),
+    scaffoldBackgroundColor: Palette.background,
+    colorScheme: ColorScheme.dark(
+      primary: Palette.pink,
+      onPrimary: Colors.white,
+      secondary: Palette.violet,
+      onSecondary: Colors.white,
+      surface: Palette.surface,
+      onSurface: Palette.textPrimary,
+      background: Palette.background,
+      onBackground: Palette.textPrimary,
+      error: Palette.danger,
+      onError: Colors.white,
+    ),
+    textTheme: textTheme,
     appBarTheme: const AppBarTheme(
-      color: Color.fromARGB(255, 15, 9, 19),
-      elevation: 0, systemOverlayStyle: SystemUiOverlayStyle.light,
-    ),
-    textTheme: const TextTheme(
-      displayLarge: TextStyle(
-        color: Colors.white,
-        fontSize: 24,
-        fontWeight: FontWeight.bold,
-      ),
-      bodyLarge: TextStyle(
-        color: Colors.white,
-        fontSize: 16,
+      backgroundColor: Palette.background,
+      elevation: 0,
+      centerTitle: false,
+      systemOverlayStyle: SystemUiOverlayStyle.light,
+      iconTheme: IconThemeData(color: Palette.textPrimary),
+      titleTextStyle: TextStyle(
+        color: Palette.textPrimary,
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
       ),
     ),
-    buttonTheme: ButtonThemeData(
-      buttonColor: Colors.white,
-      textTheme: ButtonTextTheme.primary,
+    snackBarTheme: SnackBarThemeData(
+      behavior: SnackBarBehavior.floating,
+      backgroundColor: Palette.surfaceRaised,
+      contentTextStyle: GoogleFonts.spaceGrotesk(color: Palette.textPrimary),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
       ),
     ),
-    inputDecorationTheme: InputDecorationTheme(
-      fillColor: Colors.white,
-      filled: true,
-      enabledBorder: OutlineInputBorder(
-        borderSide: const BorderSide(
-          color: Colors.white,
-          width: 2,
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderSide: const BorderSide(
-          color: Colors.white,
-          width: 2,
-        ),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      labelStyle: const TextStyle(
-        color: Colors.white,
-      ),
-    ), colorScheme: ColorScheme.fromSwatch().copyWith(secondary: Colors.white),
+    progressIndicatorTheme: const ProgressIndicatorThemeData(
+      color: Palette.pink,
+    ),
   );
 }

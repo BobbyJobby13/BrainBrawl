@@ -18,6 +18,8 @@ Future<void> main() async {
       initialRoute: AppPages.INITIAL,
       getPages: AppPages.routes,
       theme: getBlackWhiteTheme(),
+      defaultTransition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 320),
     ),
   ));
 }

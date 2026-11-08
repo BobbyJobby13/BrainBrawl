@@ -42,3 +42,15 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Installer build output. windows/installer/Product.wxs is the hand-written source;
+# Files.wxs is harvested by heat and the .msi/.dmg are build products, so keep
+# them out of version control when building locally.
+/obj/
+/windows/installer/Files.wxs
+/Brain-Brawl-*.msi
+/Brain-Brawl-*.dmg
+/Brain-Brawl-*-portable.zip
+
+# Screenshots captured during development, not part of the app.
+/artifacts/

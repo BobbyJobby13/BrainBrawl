@@ -6,6 +6,8 @@ import '../modules/competitions/bindings/competition_bindings.dart';
 import '../modules/competitions/views/competition_view.dart';
 import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/dashboard/views/dashboard_view.dart';
+import '../modules/host/bindings/host_binding.dart';
+import '../modules/host/views/host_console_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/leaderboard/bindings/leaderboard_binding.dart';
@@ -81,6 +83,11 @@ class AppPages {
         name: _Paths.PROFILE,
         page: () => const ProfileView(),
         binding: ProfileBinding()
+    ),
+    GetPage(
+        name: _Paths.HOST,
+        page: () => const HostConsoleView(),
+        binding: HostBinding()
     ),
   ];
 }

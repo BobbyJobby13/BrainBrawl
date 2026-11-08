@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutterwebapp_reload_detector/flutterwebapp_reload_detector.dart';
+import 'package:brainbrawl/platform/reload_detector.dart';
 import 'package:get/get.dart';
 import 'package:quiver/async.dart';
 import 'package:brainbrawl/app_data.dart';
@@ -18,7 +18,7 @@ class LeaderBoardController extends GetxController {
   @override
   void onInit() async{
     super.onInit();
-     WebAppReloadDetector.onReload(() {
+     AppReloadDetector.onReload(() {
       Get.offAllNamed(Routes.HOME);
     });
     final response = await http.get(

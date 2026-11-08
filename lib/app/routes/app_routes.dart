@@ -13,6 +13,7 @@ abstract class Routes {
   static const PAIR = _Paths.PAIR;
   static const LEADERBOARD = _Paths.LEADERBOARD;
   static const PROFILE = _Paths.PROFILE;
+  static const HOST = _Paths.HOST;
 }
 
 abstract class _Paths {
@@ -27,5 +28,6 @@ abstract class _Paths {
   static const PAIR = '/pair';
   static const LEADERBOARD = '/leaderboard';
   static const PROFILE = '/profile';
+  static const HOST = '/host';
 
 }

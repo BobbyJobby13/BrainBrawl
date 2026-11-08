@@ -79,7 +79,20 @@ class DashboardController extends GetxController {
 
   Future<List<String>> getTime() async {
     List<String> time = [];
-    final String currentTimeZone = await FlutterNativeTimezone.getLocalTimezone();
+    // flutter_native_timezone has no Windows/Linux implementation, so the
+    // channel call throws there. Fall back to the machine clock instead of
+    // taking the desktop build down.
+    String? currentTimeZone;
+    try {
+      currentTimeZone = await FlutterNativeTimezone.getLocalTimezone();
+    } catch (_) {
+      currentTimeZone = null;
+    }
+    if (currentTimeZone == null) {
+      final DateTime now = DateTime.now();
+      time.addAll([now.hour.toString(), now.minute.toString(), now.second.toString()]);
+      return time;
+    }
     final currentTime = await http.get(Uri.parse("https://api.api-ninjas.com/v1/worldtime?timezone=$currentTimeZone" ), headers: {"X-Api-Key": "Rhm/aTnf2pLYUpIAIlClWQ==my1N1rjCZCboGRb8"});
     var currentTimeData = json.decode(currentTime.body);
     time.addAll([currentTimeData['hour'].toString() ,currentTimeData['minute'].toString() ,currentTimeData['second'].toString() ]);

@@ -1,0 +1,166 @@
+{
+  "pack": "Naval Science (starter sample)",
+  "note": "Starter set so the console has content on day one. Replace or extend it with your Naval Science 1-4 study guides using the console's Paste importer.",
+  "questions": [
+    {
+      "prompt": "What does the acronym SONAR stand for?",
+      "answer": "SOund NAvigation and Ranging",
+      "hints": [
+        "The first two letters come from the word sound.",
+        "It uses reflected underwater sound to find objects."
+      ],
+      "points": 10,
+      "difficulty": 1
+    },
+    {
+      "prompt": "What does the acronym RADAR stand for?",
+      "answer": "RAdio Detection And Ranging",
+      "hints": [
+        "It replaced the older term 'radio location'.",
+        "It bounces radio waves off objects."
+      ],
+      "points": 10,
+      "difficulty": 1
+    },
+    {
+      "prompt": "On a ship, which side is port and which is starboard?",
+      "answer": "Port is the left side and starboard is the right side, facing forward",
+      "hints": [
+        "Both are named facing the bow.",
+        "Port is the shorter word of the two, and it is the shorter crossing."
+      ],
+      "points": 10,
+      "difficulty": 1
+    },
+    {
+      "prompt": "What are the front and rear of a ship called?",
+      "answer": "The front is the bow and the rear is the stern",
+      "hints": [
+        "The rear one also names the direction of movement when going backwards.",
+        "The forward one takes the spray."
+      ],
+      "points": 10,
+      "difficulty": 1
+    },
+    {
+      "prompt": "Which submarine was the world's first nuclear-powered submarine, and in what year did she go to sea?",
+      "answer": "USS Nautilus (SSN-571), in 1954",
+      "hints": [
+        "She shares her name with Captain Nemo's vessel.",
+        "The year is mid-1950s, same decade as the first nuclear-powered carrier."
+      ],
+      "points": 20,
+      "difficulty": 3
+    },
+    {
+      "prompt": "Which ship was the first nuclear-powered aircraft carrier?",
+      "answer": "USS Enterprise (CVN-65)",
+      "hints": [
+        "She shares a name with a famous starship.",
+        "Her hull number is CVN-65."
+      ],
+      "points": 20,
+      "difficulty": 3
+    },
+    {
+      "prompt": "Where is the United States Naval Academy located, and in what year was it founded?",
+      "answer": "Annapolis, Maryland; founded in 1845",
+      "hints": [
+        "The city is also the capital of its state.",
+        "The decade is the 1840s."
+      ],
+      "points": 15,
+      "difficulty": 2
+    },
+    {
+      "prompt": "One knot equals how many nautical miles per hour, and how many kilometres per hour?",
+      "answer": "One nautical mile per hour, about 1.852 kilometres per hour",
+      "hints": [
+        "A knot is a speed, never a distance.",
+        "One nautical mile is 1,852 metres."
+      ],
+      "points": 15,
+      "difficulty": 2
+    },
+    {
+      "prompt": "In Navy signal flags and voice procedure, what does 'Bravo Zulu' mean?",
+      "answer": "Well done, or a job well done",
+      "hints": [
+        "It is usually abbreviated to two letters.",
+        "It is praise, not a warning."
+      ],
+      "points": 10,
+      "difficulty": 1
+    },
+    {
+      "prompt": "On what date is the United States Navy's birthday observed?",
+      "answer": "13 October 1775",
+      "hints": [
+        "It marks the founding of the Continental Navy.",
+        "The Marine Corps birthday is about a month later, in November."
+      ],
+      "points": 15,
+      "difficulty": 2
+    },
+    {
+      "prompt": "On what date is the United States Marine Corps birthday?",
+      "answer": "10 November 1775",
+      "hints": [
+        "It falls in November, shortly after the Navy's October birthday.",
+        "The year is the same as the Navy's founding year."
+      ],
+      "points": 15,
+      "difficulty": 2
+    },
+    {
+      "prompt": "What is the United States Navy's official song?",
+      "answer": "Anchors Aweigh",
+      "hints": [
+        "It is played at football games and at commissioning.",
+        "The title mentions a raising of anchors."
+      ],
+      "points": 10,
+      "difficulty": 1
+    },
+    {
+      "prompt": "What is the lowest commissioned officer rank in the United States Navy?",
+      "answer": "Ensign (O-1)",
+      "hints": [
+        "It sits just above a chief warrant officer and below lieutenant junior grade.",
+        "A one-stripe gold shoulder board or collar device marks it."
+      ],
+      "points": 15,
+      "difficulty": 2
+    },
+    {
+      "prompt": "The distress call 'mayday' comes from which language and phrase?",
+      "answer": "French, from 'm'aider' (short for venez m'aider, 'come help me')",
+      "hints": [
+        "It is a Romance language.",
+        "The phrase means 'help me'."
+      ],
+      "points": 15,
+      "difficulty": 2
+    },
+    {
+      "prompt": "Where does the United States Navy conduct enlisted recruit training?",
+      "answer": "Recruit Training Command, Great Lakes, Illinois",
+      "hints": [
+        "It is on a lake, not an ocean.",
+        "It is the Navy's only enlisted boot camp."
+      ],
+      "points": 20,
+      "difficulty": 3
+    },
+    {
+      "prompt": "What does the order 'all hands' refer to?",
+      "answer": "The entire crew of the ship",
+      "hints": [
+        "It is a general announcement, not a station.",
+        "It leaves nobody out."
+      ],
+      "points": 10,
+      "difficulty": 1
+    }
+  ]
+}

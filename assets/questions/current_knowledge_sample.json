@@ -1,0 +1,126 @@
+{
+  "pack": "Current knowledge (starter sample)",
+  "note": "Starter set of modern naval and defence topics. Verify anything time-sensitive against your own sources before a competition, and add your own current-knowledge questions in the Questions panel.",
+  "questions": [
+    {
+      "prompt": "Which ship is the lead ship of the US Navy's newest class of aircraft carriers?",
+      "answer": "USS Gerald R. Ford (CVN-78)",
+      "hints": [
+        "The class is named after her.",
+        "She is named for the 38th president."
+      ],
+      "points": 15,
+      "difficulty": 2
+    },
+    {
+      "prompt": "What is the primary mission of the P-8 Poseidon?",
+      "answer": "Maritime patrol, including anti-submarine and anti-surface warfare",
+      "hints": [
+        "It is a fixed-wing aircraft built on a Boeing 737 airframe.",
+        "It replaced the P-3 Orion."
+      ],
+      "points": 15,
+      "difficulty": 2
+    },
+    {
+      "prompt": "Which variant of the F-35 is designed for aircraft carrier operations?",
+      "answer": "The F-35C",
+      "hints": [
+        "The B variant is the short take-off and vertical landing one.",
+        "Carrier optimisation means larger wings and a stronger landing gear."
+      ],
+      "points": 15,
+      "difficulty": 2
+    },
+    {
+      "prompt": "What does the acronym AUKUS refer to?",
+      "answer": "A trilateral security partnership between Australia, the United Kingdom and the United States",
+      "hints": [
+        "The name is built from the three countries.",
+        "It was announced in 2021 and includes a nuclear-powered submarine programme."
+      ],
+      "points": 20,
+      "difficulty": 3
+    },
+    {
+      "prompt": "What is the US Navy's carrier-based unmanned aerial refuelling aircraft called?",
+      "answer": "MQ-25 Stingray",
+      "hints": [
+        "It is unmanned and its job is to top up other aircraft.",
+        "Its name is a fish."
+      ],
+      "points": 20,
+      "difficulty": 3
+    },
+    {
+      "prompt": "Which class of US Navy destroyers carries the Aegis combat system and is the backbone of the surface fleet?",
+      "answer": "Arleigh Burke class",
+      "hints": [
+        "It is named for a famous World War II destroyer admiral.",
+        "The class is abbreviated DDG-51."
+      ],
+      "points": 15,
+      "difficulty": 2
+    },
+    {
+      "prompt": "What is the mission of a littoral combat ship?",
+      "answer": "Operations in shallow coastal waters, including surface, anti-submarine and mine countermeasures missions",
+      "hints": [
+        "'Littoral' refers to the shore zone.",
+        "The class was designed to be fast, modular and small."
+      ],
+      "points": 15,
+      "difficulty": 2
+    },
+    {
+      "prompt": "Which aircraft provides carrier airborne early warning and control?",
+      "answer": "The E-2D Advanced Hawkeye",
+      "hints": [
+        "It carries a large rotating radar dome on top.",
+        "It is a twin-turboprop aircraft."
+      ],
+      "points": 20,
+      "difficulty": 3
+    },
+    {
+      "prompt": "What is a tiltrotor aircraft, and which military transport is the best-known example?",
+      "answer": "An aircraft whose rotors tilt between helicopter and aeroplane flight; the V-22 Osprey",
+      "hints": [
+        "It takes off like a helicopter and cruises like a plane.",
+        "The Marine Corps uses it as a medium-lift transport."
+      ],
+      "points": 15,
+      "difficulty": 2
+    },
+    {
+      "prompt": "In naval doctrine, what does 'distributed maritime operations' describe?",
+      "answer": "Spreading combat power across many networked, smaller formations rather than concentrating it in a few large units",
+      "hints": [
+        "The opposite of putting everything in one place.",
+        "It relies on networking and long-range fires."
+      ],
+      "points": 20,
+      "difficulty": 3
+    },
+    {
+      "prompt": "Which class of stealth destroyers includes USS Zumwalt (DDG-1000)?",
+      "answer": "The Zumwalt class",
+      "hints": [
+        "The class takes its name from its lead ship.",
+        "Its distinctive feature is a low, angular superstructure."
+      ],
+      "points": 15,
+      "difficulty": 2
+    },
+    {
+      "prompt": "What is the difference between a frigate and a destroyer in modern navies?",
+      "answer": "A destroyer is generally larger and more heavily armed for fleet air defence and strike, while a frigate is smaller and optimised for escort and patrol",
+      "hints": [
+        "One is the larger, more capable escort.",
+        "The smaller of the two is the general-purpose workhorse."
+      ],
+      "points": 20,
+      "difficulty": 3
+    }
+  ]
+}

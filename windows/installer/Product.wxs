@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  MSI installer for Brain Brawl.
+
+  Built by .github/workflows/desktop-builds.yml after the Flutter release build:
+  heat harvests the bundle into Files.wxs, then candle compiles this file plus
+  that fragment, and light links the two into Brain-Brawl-<x.y.z>-Windows.msi.
+  The exact commands are in the workflow and in the README desktop section.
+
+  Files.wxs is generated at build time (it lists the Flutter bundle, which changes
+  with every build), so only the installer behaviour lives here.
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*"
+           Name="Brain Brawl"
+           Language="1033"
+           Version="$(var.Version)"
+           Manufacturer="Brain Brawl"
+           UpgradeCode="7F2C1B64-5D3A-4F8E-9A3B-2D6C8E4F1A70">
+
+    <Package InstallerVersion="500"
+             Compressed="yes"
+             InstallScope="perMachine"
+             InstallPrivileges="elevated"
+             Platform="x64"
+             Description="Brain Brawl quiz bowl console"/>
+
+    <!-- Replacing an older install in place instead of stacking versions. -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Brain Brawl is already installed."/>
+    <MediaTemplate EmbedCab="yes"/>
+
+    <Icon Id="AppIcon" SourceFile="..\runner\resources\app_icon.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="AppIcon"/>
+    <Property Id="ARPNOMODIFY" Value="1"/>
+
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLFOLDER" Name="Brain Brawl"/>
+      </Directory>
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="Brain Brawl"/>
+      </Directory>
+    </Directory>
+
+    <!-- Start Menu shortcut; keypath is a per-machine value so uninstall works for
+         every user, which is what a perMachine package requires. -->
+    <DirectoryRef Id="ApplicationProgramsFolder">
+      <Component Id="ApplicationShortcut" Guid="B8D1F0A2-3C47-4E15-8A9D-6F2B7C0D9E31">
+        <Shortcut Id="StartMenuShortcut"
+                  Name="Brain Brawl"
+                  Description="Quiz bowl host console"
+                  Target="[INSTALLFOLDER]brainbrawl_frontend.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon"/>
+        <RemoveFolder Id="RemoveApplicationProgramsFolder" On="uninstall"/>
+        <RegistryValue Root="HKLM"
+                       Key="Software\BrainBrawl"
+                       Name="installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+    <Feature Id="Main" Title="Brain Brawl" Level="1" Display="expand">
+      <ComponentGroupRef Id="AppFiles"/>
+      <ComponentRef Id="ApplicationShortcut"/>
+    </Feature>
+  </Product>
+</Wix>

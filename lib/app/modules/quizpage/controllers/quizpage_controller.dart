@@ -3,7 +3,7 @@ import 'dart:convert';
 //import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutterwebapp_reload_detector/flutterwebapp_reload_detector.dart';
+import 'package:brainbrawl/platform/reload_detector.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 //import 'package:brainbrawl/app/modules/login/views/login_view.dart';
@@ -125,7 +125,7 @@ class QuizpageController extends GetxController {
   @override
   Future<void> onInit() async {
     // await getQuestions();
-    WebAppReloadDetector.onReload(() {
+    AppReloadDetector.onReload(() {
       Get.offAllNamed(Routes.HOME);
     });
     super.onInit();

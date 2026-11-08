@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutterwebapp_reload_detector/flutterwebapp_reload_detector.dart';
+import 'package:brainbrawl/platform/reload_detector.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../app_data.dart';
 import '../../../routes/app_pages.dart';
@@ -31,7 +31,7 @@ class CompetitionController extends GetxController {
 
 // Try reading data from the counter key. If it doesn't exist, return 0.
     userId = prefs.getInt('userId') ?? userId;
-    WebAppReloadDetector.onReload(() {
+    AppReloadDetector.onReload(() {
       Get.offAllNamed(Routes.COMPETITION);
     });
     //

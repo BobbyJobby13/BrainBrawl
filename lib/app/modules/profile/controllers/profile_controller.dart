@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 //import 'package:flutter/services.dart';
 import 'package:flutter/services.dart';
-import 'package:flutterwebapp_reload_detector/flutterwebapp_reload_detector.dart';
+import 'package:brainbrawl/platform/reload_detector.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:brainbrawl/app/modules/login/views/login_view.dart';
@@ -21,7 +21,7 @@ class ProfileController extends GetxController {
 
   @override
   Future<void> onInit() async {
-    WebAppReloadDetector.onReload(() {
+    AppReloadDetector.onReload(() {
       Get.offAllNamed(Routes.HOME);
     });
     final prefs = await SharedPreferences.getInstance();
